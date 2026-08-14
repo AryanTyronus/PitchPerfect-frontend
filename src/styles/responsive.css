@@ -61,10 +61,35 @@
     width: 100%;
   }
 
-  .benefits-head {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .track .reveal {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .track-tag {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .room-preview-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .room-preview-stage {
+    border-left: 0;
+    border-top: 1px solid var(--stage-line);
+    min-height: clamp(200px, 40vw, 280px);
+  }
+
+  .debrief-preview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .debrief-feedback {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .debrief-hero {
@@ -99,11 +124,6 @@
 @media (max-width: 420px) {
   .option-grid {
     grid-template-columns: 1fr;
-  }
-
-  .benefit-item {
-    grid-template-columns: 1fr;
-    gap: 6px;
   }
 
   .score-ring {
