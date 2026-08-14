@@ -1,0 +1,146 @@
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 1020px) {
+  .hero-section {
+    min-height: auto;
+    padding: clamp(60px, 12vh, 104px) 0;
+  }
+
+  .hero-ribbon {
+    height: 42vh;
+  }
+
+  .interview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interview-side {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand span:last-child {
+    display: none;
+  }
+
+  .hero-actions,
+  .control-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-ribbon {
+    height: 34vh;
+  }
+
+  .interview-ribbon {
+    height: 84px;
+  }
+
+  .channel-row {
+    grid-template-columns: 6px auto minmax(0, 1fr) 42px;
+  }
+
+  .channel-label {
+    font-size: 0.8rem;
+  }
+
+  .control-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .control-row .button {
+    width: 100%;
+  }
+
+  .button {
+    width: 100%;
+  }
+
+  .benefits-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .debrief-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .results-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .setup-brief {
+    align-items: stretch;
+    flex-direction: column;
+    position: static;
+  }
+
+  .media-status-row {
+    max-width: calc(100% - 120px);
+  }
+}
+
+@media (max-width: 420px) {
+  .option-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .score-ring {
+    --ring-size: 152px;
+  }
+
+  .score-ring-value strong {
+    font-size: 2.6rem;
+  }
+}
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .page-frame {
+    animation: none;
+  }
+
+  .hero-ribbon {
+    transform: translateY(-50%);
+  }
+}

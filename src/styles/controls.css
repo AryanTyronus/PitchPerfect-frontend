@@ -1,0 +1,159 @@
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+.button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  display: inline-flex;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  justify-content: center;
+  letter-spacing: 0.01em;
+  min-height: 46px;
+  padding: 0 20px;
+  transition:
+    background 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    transform 160ms var(--ease-spring),
+    box-shadow 180ms var(--ease-out);
+  user-select: none;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.button:disabled {
+  opacity: 0.5;
+}
+
+.button-primary {
+  background: var(--accent);
+  color: var(--fg-invert);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  box-shadow: 0 6px 20px oklch(58% 0.18 255 / 0.28);
+}
+
+.button-secondary {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--fg);
+}
+
+.button-secondary:hover:not(:disabled) {
+  border-color: oklch(84% 0.03 255);
+  color: var(--fg);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--muted-strong);
+}
+
+.button-ghost:hover:not(:disabled) {
+  background: var(--surface-raised);
+  color: var(--fg);
+}
+
+.button-danger {
+  background: var(--danger);
+  color: var(--fg-invert);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: var(--danger-strong);
+  box-shadow: 0 6px 20px oklch(55% 0.18 27 / 0.26);
+}
+
+.button-full {
+  width: 100%;
+}
+/* ============================================================
+   Badges / status / chips
+   ============================================================ */
+
+.badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  gap: 7px;
+  letter-spacing: 0.04em;
+  min-height: 26px;
+  padding: 0 11px;
+  text-transform: uppercase;
+}
+
+.badge-neutral {
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  color: var(--muted-strong);
+}
+
+.badge-success {
+  background: var(--signal-soft);
+  border: 1px solid color-mix(in oklch, var(--signal) 35%, var(--border));
+  color: var(--signal-strong);
+}
+
+.badge-warning {
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in oklch, var(--warn) 35%, var(--border));
+  color: var(--warn-strong);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in oklch, var(--danger) 32%, var(--border));
+  color: var(--danger-strong);
+}
+
+.status {
+  align-items: center;
+  color: var(--muted-strong);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 500;
+  gap: 8px;
+  letter-spacing: 0.01em;
+  min-height: 24px;
+  white-space: nowrap;
+}
+
+.status::before {
+  background: var(--muted);
+  border-radius: 999px;
+  content: "";
+  height: 7px;
+  width: 7px;
+}
+
+.status-live::before {
+  animation: status-pulse 1.6s var(--ease-out) infinite;
+  background: var(--danger);
+}
+
+.status-success::before {
+  background: var(--signal);
+}
+
+.status-warning::before {
+  background: var(--warn);
+}
+
+.status-error::before {
+  background: var(--danger);
+}

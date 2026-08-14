@@ -1,0 +1,185 @@
+/* ============================================================
+   Setup — practice configuration
+   ============================================================ */
+
+.setup-page {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.setup-form {
+  display: grid;
+  gap: clamp(30px, 4vw, 40px);
+}
+
+.setup-step {
+  display: grid;
+  gap: 16px;
+}
+
+.option-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.setup-step legend {
+  align-items: baseline;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.setup-step-index {
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.setup-step-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.option-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.option-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  min-height: 86px;
+  padding: 16px 18px;
+  position: relative;
+  transition:
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out),
+    transform 200ms var(--ease-spring);
+}
+
+.option-card:hover {
+  border-color: var(--accent-line);
+  transform: translateY(-1px);
+}
+
+.option-card:active {
+  transform: translateY(0);
+}
+
+.option-card input {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+.option-card span {
+  color: var(--fg);
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  padding-right: 26px;
+}
+
+.option-card small {
+  color: var(--muted-strong);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.option-card .option-radio {
+  align-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  position: absolute;
+  right: 16px;
+  top: 18px;
+  transition: border-color 200ms var(--ease-out), background 200ms var(--ease-out);
+  width: 20px;
+}
+
+.option-card .option-radio::after {
+  background: var(--surface);
+  border-radius: 999px;
+  content: "";
+  height: 8px;
+  transform: scale(0);
+  transition: transform 220ms var(--ease-spring);
+  width: 8px;
+}
+
+.option-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.option-selected:hover {
+  border-color: var(--accent);
+}
+
+.option-selected .option-radio {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.option-selected .option-radio::after {
+  transform: scale(1);
+}
+
+.option-selected span {
+  color: var(--fg);
+}
+
+.setup-brief {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  justify-content: space-between;
+  margin-top: 26px;
+  padding: 20px 22px;
+  position: sticky;
+  bottom: 18px;
+}
+
+.setup-brief-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.setup-brief-copy .eyebrow {
+  color: var(--muted-strong);
+}
+
+.setup-brief-config {
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.setup-brief-config .cfg-sep {
+  color: var(--muted);
+  margin: 0 2px;
+}
+
+.setup-brief .button {
+  flex: 0 0 auto;
+}

@@ -42,7 +42,7 @@ export function RecordingControls({
   const canSubmit = state === 'RECORDED' && !hasSubmitted
 
   return (
-    <section className="recording-panel" aria-live="polite">
+    <section className="recording-panel" aria-live="polite" data-od-id="recording-panel">
       <div className="recording-head">
         <StatusIndicator
           label={
@@ -63,19 +63,29 @@ export function RecordingControls({
           <video controls src={previewUrl} />
         </div>
       ) : (
-        <div className="preview-empty">Preview appears after recording.</div>
+        <div className="preview-empty">Your preview appears here after recording.</div>
       )}
 
       {error ? <p className="inline-error">{error}</p> : null}
       {timeExpired ? (
-        <p className="inline-note">Recording is closed because the timed answer expired.</p>
+        <p className="inline-note">
+          Recording is closed because the timed answer expired.
+        </p>
       ) : null}
 
       <div className="control-row">
-        <Button disabled={disabled || isRecording || isBusy} onClick={onStart}>
+        <Button
+          disabled={disabled || isRecording || isBusy}
+          onClick={onStart}
+          variant={!canSubmit && !hasSubmitted ? 'primary' : 'secondary'}
+        >
           Start Recording
         </Button>
-        <Button disabled={disabled || !isRecording || isBusy} onClick={onStop} variant="danger">
+        <Button
+          disabled={disabled || !isRecording || isBusy}
+          onClick={onStop}
+          variant="danger"
+        >
           Stop Recording
         </Button>
         <Button
@@ -85,7 +95,11 @@ export function RecordingControls({
         >
           Record Again
         </Button>
-        <Button disabled={!canSubmit || isBusy} onClick={onSubmit} variant="secondary">
+        <Button
+          disabled={!canSubmit || isBusy}
+          onClick={onSubmit}
+          variant={canSubmit ? 'primary' : 'secondary'}
+        >
           {hasSubmitted ? 'Submitted' : isBusy ? 'Submitting...' : 'Submit Answer'}
         </Button>
       </div>

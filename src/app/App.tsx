@@ -1,4 +1,6 @@
 import { AppShell } from '../components/layout/AppShell'
+import { ThemeProvider } from '../components/theme/ThemeProvider'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { InterviewRoomPage } from '../pages/InterviewRoomPage'
 import { LandingPage } from '../pages/LandingPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
@@ -8,7 +10,8 @@ import { ResultsPage } from '../pages/ResultsPage'
 import { useAppRouter } from './router'
 
 export default function App() {
-  const { navigate, route } = useAppRouter()
+  const { direction, key, navigate, route } = useAppRouter()
+  const reduced = useReducedMotion()
 
   let page
 
@@ -32,5 +35,19 @@ export default function App() {
       page = <NotFoundPage onNavigate={navigate} />
   }
 
-  return <AppShell onNavigate={navigate}>{page}</AppShell>
+  const frameClass = reduced
+    ? 'page-frame'
+    : direction === 'back'
+      ? 'page-frame is-back'
+      : 'page-frame'
+
+  return (
+    <ThemeProvider>
+      <AppShell onNavigate={navigate}>
+        <div className={frameClass} data-od-id="page-frame" key={key}>
+          {page}
+        </div>
+      </AppShell>
+    </ThemeProvider>
+  )
 }

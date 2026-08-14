@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
-import { MetricBar } from '../components/results/MetricBar'
+import { useCallback, useEffect, useState } from 'react'
+import { FeedbackList } from '../components/results/FeedbackList'
+import { ScoreRing } from '../components/results/ScoreRing'
+import { Reveal } from '../components/motion/Reveal'
+import { RIBBON_WORDS } from '../components/ribbon/ribbonPresets'
+import { RibbonChannels } from '../components/ribbon/RibbonChannels'
+import { SpeechRibbon } from '../components/ribbon/SpeechRibbon'
 import { Button } from '../components/ui/Button'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { sessionsApi } from '../services/sessionsApi'
+import type { ApiError } from '../types/api'
 import type { EvaluationResult } from '../types/evaluation'
 
 interface ResultsPageProps {
@@ -11,23 +17,44 @@ interface ResultsPageProps {
   sessionId: string
 }
 
+type ResultsLoadState =
+  | { status: 'loading' }
+  | { status: 'unavailable' }
+  | { status: 'error' }
+  | { status: 'ready'; result: EvaluationResult }
+
+function isApiError(error: unknown): error is ApiError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string'
+  )
+}
+
 export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
-  const [result, setResult] = useState<EvaluationResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [state, setState] = useState<ResultsLoadState>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let active = true
+    setState({ status: 'loading' })
 
     async function loadResult() {
       try {
-        const nextResult = await sessionsApi.getResult(sessionId)
+        const result = await sessionsApi.getResult(sessionId)
         if (active) {
-          setResult(nextResult)
+          setState({ status: 'ready', result })
         }
-      } catch {
-        if (active) {
-          setError('Result unavailable. Please try again after processing completes.')
+      } catch (error) {
+        if (!active) {
+          return
         }
+        if (isApiError(error) && error.code === 'EVALUATION_FAILED') {
+          setState({ status: 'unavailable' })
+          return
+        }
+        setState({ status: 'error' })
       }
     }
 
@@ -36,70 +63,149 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
     return () => {
       active = false
     }
-  }, [sessionId])
+  }, [attempt, sessionId])
 
-  if (error) {
+  const retry = useCallback(() => {
+    setAttempt((current) => current + 1)
+  }, [])
+
+  if (state.status === 'loading') {
     return (
-      <ErrorState
-        actionLabel="Practice again"
-        message={error}
-        onAction={() => onNavigate('/setup')}
-        title="Result unavailable"
+      <LoadingState
+        message="Fetching your performance report."
+        title="Loading your results"
       />
     )
   }
 
-  if (!result) {
-    return <LoadingState title="Loading results" />
+  if (state.status === 'unavailable') {
+    return (
+      <div className="state-panel" role="status">
+        <div className="loader" aria-hidden="true" />
+        <h2>Your results are still processing</h2>
+        <p>Evaluation is still running. Check again in a moment.</p>
+        <Button onClick={retry} variant="secondary">
+          Check Again
+        </Button>
+      </div>
+    )
   }
 
+  if (state.status === 'error') {
+    return (
+      <ErrorState
+        actionLabel="Try Again"
+        message="We could not load your results. Please try again."
+        onAction={retry}
+        title="Your results couldn't be loaded"
+      />
+    )
+  }
+
+  const { result } = state
+
   return (
-    <div className="results-page">
-      <section className="results-hero">
-        <div>
-          <p className="eyebrow">Feedback dashboard</p>
-          <h1>Overall Score</h1>
+    <div className="results-page" data-od-id="results">
+      <header className="results-header">
+        <div className="results-header-content">
+          <Reveal>
+            <p className="eyebrow">Coaching debrief</p>
+          </Reveal>
+          <Reveal delay={50}>
+            <h1>Your performance</h1>
+          </Reveal>
+          <Reveal delay={100} as="p" className="results-subtitle">
+            Here's how you performed in this practice session.
+          </Reveal>
         </div>
-        <div className="score-ring">
-          <strong>{result.overallScore}</strong>
-          <span>/ 100</span>
+        <Reveal delay={120}>
+          <span className="results-meta">
+            Session <span className="mono">{result.sessionId}</span>
+          </span>
+        </Reveal>
+      </header>
+
+      <section
+        className="debrief-hero"
+        aria-labelledby="overall-performance"
+        data-od-id="overall-performance"
+      >
+        <Reveal className="debrief-score">
+          <p id="overall-performance" className="debrief-label">
+            Overall Score
+          </p>
+          <ScoreRing score={result.overallScore} animate />
+          <p className="debrief-note">
+            An overall read of the five communication signals below.
+          </p>
+        </Reveal>
+        <div className="debrief-metrics">
+          <Reveal delay={110}>
+            <h2>How your speech read</h2>
+          </Reveal>
+          <Reveal delay={150}>
+            <RibbonChannels metrics={result.metrics} animate />
+          </Reveal>
         </div>
       </section>
 
-      <section className="results-grid">
-        <div className="metrics-panel">
-          <h2>Communication metrics</h2>
-          {result.metrics.map((metric) => (
-            <MetricBar key={metric.label} metric={metric} />
-          ))}
-        </div>
-
-        <div className="feedback-column">
-          <article>
-            <h2>What You Did Well</h2>
-            <ul>
-              {result.strengths.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-          <article>
-            <h2>Areas To Improve</h2>
-            <ul>
-              {result.improvements.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-          <article>
-            <h2>Recommended Next Practice</h2>
-            <p>{result.nextPractice}</p>
-          </article>
+      <section className="feedback-section" aria-labelledby="feedback-heading">
+        <Reveal>
+          <h2 id="feedback-heading">Coaching notes</h2>
+        </Reveal>
+        <div className="feedback-grid">
+          <div className="feedback-col">
+            <Reveal delay={60}>
+              <p className="eyebrow">What worked</p>
+            </Reveal>
+            <Reveal delay={100} dataOdId="feedback-strengths">
+              <FeedbackList
+                items={result.strengths}
+                kind="strength"
+                title="What You Did Well"
+              />
+            </Reveal>
+          </div>
+          <div className="feedback-col">
+            <Reveal delay={140}>
+              <p className="eyebrow">What to improve</p>
+            </Reveal>
+            <Reveal delay={180} dataOdId="feedback-improvements">
+              <FeedbackList
+                items={result.improvements}
+                kind="improvement"
+                title="Areas to Improve"
+              />
+            </Reveal>
+          </div>
         </div>
       </section>
 
-      <div className="result-actions">
-        <Button onClick={() => onNavigate('/setup')}>Practice Again</Button>
+      <section
+        className="next-practice"
+        aria-labelledby="next-practice-heading"
+        data-od-id="next-practice"
+      >
+        <Reveal className="next-practice-copy">
+          <p className="eyebrow">Your Next Rep</p>
+          <h2 id="next-practice-heading">Recommended Next Practice</h2>
+          <p>{result.nextPractice}</p>
+        </Reveal>
+        <Reveal delay={120}>
+          <Button data-od-id="cta-practice-again" onClick={() => onNavigate('/setup')}>
+            Practice Again
+          </Button>
+        </Reveal>
+      </section>
+
+      <div className="results-flow" aria-hidden="true">
+        <SpeechRibbon
+          flow="forward"
+          intensity={0.45}
+          stateLabel="The loop continues"
+          variant="loop"
+          words={RIBBON_WORDS.loop}
+        />
       </div>
     </div>
   )

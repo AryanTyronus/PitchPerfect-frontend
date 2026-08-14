@@ -17,16 +17,21 @@ export function TimerPanel({
     return null
   }
 
+  const urgent = warning && !expired
+
   return (
     <aside
-      className={`timer-panel${warning ? ' timer-warning' : ''}${expired ? ' timer-expired' : ''}`}
+      className={`timer-panel${urgent ? ' timer-warning' : ''}${expired ? ' timer-expired' : ''}`}
       role="timer"
       aria-label={`Time remaining ${label}`}
+      data-od-id="timer-panel"
     >
       <span>{modeLabel}</span>
-      <strong>{warning && !expired ? '!' : null} {label}</strong>
-      {warning ? <Badge tone="warning">Final 10 seconds</Badge> : null}
-      {expired ? <Badge tone="danger">Time expired</Badge> : null}
+      <strong>{label}</strong>
+      <div className="timer-brief">
+        {urgent ? <Badge tone="warning">Final 10 seconds</Badge> : null}
+        {expired ? <Badge tone="danger">Time expired</Badge> : null}
+      </div>
     </aside>
   )
 }

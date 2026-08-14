@@ -1,0 +1,143 @@
+/* ============================================================
+   Landing
+   ============================================================ */
+
+.landing-page {
+  display: grid;
+  gap: clamp(56px, 9vw, 104px);
+}
+
+.hero-section {
+  align-items: center;
+  display: grid;
+  min-height: calc(100svh - 150px);
+  overflow: clip;
+  place-items: center;
+  position: relative;
+}
+
+.hero-inner {
+  max-width: 980px;
+  position: relative;
+  width: 100%;
+  z-index: 2;
+}
+
+.hero-copy {
+  max-width: 720px;
+}
+
+.hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.1rem, 8vw, 5.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin-top: 18px;
+  max-width: 14ch;
+}
+
+.hero-support {
+  color: var(--muted-strong);
+  font-size: clamp(1rem, 1.5vw, 1.12rem);
+  line-height: 1.65;
+  margin-top: 24px;
+  max-width: 46ch;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.benefits-section {
+  border-top: 1px solid var(--border);
+  padding-top: clamp(36px, 5vw, 56px);
+}
+
+.benefits-head {
+  align-items: baseline;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: clamp(28px, 4vw, 44px);
+}
+
+.benefits-head h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  max-width: 24ch;
+}
+
+.benefits-head p {
+  color: var(--muted-strong);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 42ch;
+}
+
+.benefit-item {
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 84px minmax(0, 1fr);
+  padding: 26px 0;
+  transition: background 180ms var(--ease-out), padding 180ms var(--ease-out);
+}
+
+.benefit-item:hover {
+  background: color-mix(in oklch, var(--surface-raised) 55%, transparent);
+  padding-left: 14px;
+}
+
+.benefit-index {
+  color: var(--muted-strong);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.benefit-copy h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.benefit-copy p {
+  color: var(--muted-strong);
+  line-height: 1.6;
+  margin-top: 6px;
+  max-width: 52ch;
+}
+/* ============================================================
+   Page intro (setup / room / results headers)
+   ============================================================ */
+
+.page-intro {
+  margin-bottom: clamp(30px, 4vw, 42px);
+}
+
+.page-intro h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
+  margin-top: 12px;
+  max-width: 22ch;
+}
+
+.page-intro-lead {
+  color: var(--muted-strong);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-top: 16px;
+  max-width: 58ch;
+}

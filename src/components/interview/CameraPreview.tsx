@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { ErrorState } from '../ui/ErrorState'
 
 interface CameraPreviewProps {
   stream: MediaStream | null
@@ -33,14 +32,18 @@ export function CameraPreview({
 
   if (error) {
     return (
-      <div className="camera-preview">
-        <ErrorState title="Camera unavailable" message={error} />
+      <div className="camera-preview" data-od-id="camera-preview">
+        <div className="camera-placeholder" role="alert">
+          Camera unavailable — {error}
+        </div>
       </div>
     )
   }
 
+  const stageClass = `camera-preview${isRecording ? ' is-recording' : ''}`
+
   return (
-    <div className="camera-preview">
+    <div className={stageClass} data-od-id="camera-preview">
       {stream && cameraEnabled ? (
         <video autoPlay muted playsInline ref={videoRef} />
       ) : (
@@ -49,7 +52,7 @@ export function CameraPreview({
         </div>
       )}
       <div className="camera-overlays">
-        {isRecording ? <span className="rec-chip">REC</span> : null}
+        {isRecording ? <span className="rec-chip is-recording">REC</span> : null}
         {isTimeExpired ? <span className="rec-chip muted-chip">Mic cut off</span> : null}
       </div>
       <div className="media-status-row" aria-label="Media status">

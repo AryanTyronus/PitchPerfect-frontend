@@ -1,0 +1,111 @@
+/* ============================================================
+   PitchPerfect — design system (modern-minimal direction)
+   ============================================================ */
+
+:root {
+  /* Bound direction tokens */
+  --bg: oklch(99% 0.002 240);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(18% 0.012 250);
+  --muted: oklch(54% 0.012 250);
+  --border: oklch(92% 0.005 250);
+  --accent: oklch(58% 0.18 255);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+
+  /* Derived tokens (oklch only) */
+  --accent-strong: oklch(50% 0.17 258);
+  --accent-soft: oklch(96.5% 0.02 255);
+  --accent-line: oklch(88% 0.05 255);
+  --fg-invert: oklch(100% 0 0);
+  --surface-raised: oklch(97.5% 0.005 245);
+  --surface-inset: oklch(96% 0.006 245);
+  --muted-strong: oklch(43% 0.015 250);
+  --signal: oklch(62% 0.12 170);
+  --signal-strong: oklch(50% 0.11 170);
+  --signal-soft: oklch(96% 0.03 170);
+  --warn: oklch(56% 0.13 75);
+  --warn-strong: oklch(46% 0.12 70);
+  --warn-soft: oklch(97.5% 0.03 80);
+  --danger: oklch(55% 0.18 27);
+  --danger-strong: oklch(45% 0.16 27);
+  --danger-soft: oklch(96.5% 0.025 27);
+  --stage: oklch(16% 0.012 255);
+  --stage-raise: oklch(21% 0.014 255);
+  --stage-fg: oklch(96% 0.004 250);
+  --stage-muted: oklch(72% 0.008 250);
+  --stage-line: rgba(255, 255, 255, 0.09);
+  --shadow-soft: 0 1px 2px oklch(20% 0.01 250 / 0.05), 0 10px 30px oklch(20% 0.01 250 / 0.08);
+  --shadow-lift: 0 2px 4px oklch(20% 0.01 250 / 0.06), 0 20px 50px oklch(20% 0.01 250 / 0.12);
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-s: 10px;
+  --radius-m: 16px;
+  --radius-l: 22px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  color: var(--fg);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-synthesis: none;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+h1,
+h2,
+h3,
+p,
+figure {
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}

@@ -1,0 +1,112 @@
+/* ============================================================
+   Processing
+   ============================================================ */
+
+.processing-page {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100svh - 200px);
+}
+
+.processing-card {
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+  margin: 0 auto;
+  max-width: 620px;
+  padding: clamp(30px, 5vw, 48px);
+  text-align: center;
+  width: 100%;
+}
+
+.processing-card h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
+}
+
+.processing-card p {
+  color: var(--muted-strong);
+  line-height: 1.6;
+  max-width: 44ch;
+}
+
+.processing-spectrum {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  height: 64px;
+}
+
+.processing-spectrum i {
+  animation: spectrum 1.3s var(--ease-out) infinite;
+  background: var(--accent);
+  border-radius: 999px;
+  height: 30%;
+  width: 4px;
+}
+
+.processing-spectrum i:nth-child(3n) {
+  animation-delay: -0.4s;
+}
+
+.processing-spectrum i:nth-child(3n + 1) {
+  animation-delay: -0.8s;
+}
+
+.processing-steps {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  display: grid;
+  gap: 0;
+  margin-top: 6px;
+  overflow: hidden;
+  text-align: left;
+  width: 100%;
+}
+
+.processing-steps span {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-strong);
+  display: flex;
+  font-size: 0.9rem;
+  gap: 12px;
+  padding: 13px 16px;
+}
+
+.processing-steps span:last-child {
+  border-bottom: 0;
+}
+
+.processing-steps span::before {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  content: "";
+  height: 9px;
+  width: 9px;
+}
+
+.processing-steps .step-complete {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.processing-steps .step-complete::before {
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.processing-steps .step-active {
+  color: var(--accent-strong);
+}
+
+.processing-steps .step-active::before {
+  animation: status-pulse 1.4s var(--ease-out) infinite;
+  background: var(--accent);
+  border-color: var(--accent);
+}

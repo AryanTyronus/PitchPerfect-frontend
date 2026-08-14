@@ -1,0 +1,141 @@
+/* ============================================================
+   Shell / header / navigation
+   ============================================================ */
+
+.app-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header {
+  align-items: center;
+  background: color-mix(in oklch, var(--bg) 82%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 0 clamp(20px, 5vw, 56px);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.brand {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  display: inline-flex;
+  gap: 11px;
+  padding: 6px 2px;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  align-items: center;
+  background: var(--fg);
+  border-radius: 9px;
+  color: var(--stage-fg);
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  position: relative;
+  width: 34px;
+}
+
+.brand-mark svg {
+  height: 18px;
+  width: 18px;
+}
+
+.site-nav {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+/* ---- theme switcher ---- */
+
+.theme-toggle {
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+}
+
+.theme-toggle-option {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 6px 12px;
+}
+
+.theme-toggle-option:hover {
+  color: var(--fg);
+}
+
+.theme-toggle-option.is-active {
+  background: var(--fg);
+  color: var(--stage-fg);
+}
+/* ============================================================
+   Layout & page transitions
+   ============================================================ */
+
+main {
+  flex: 1;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: clamp(28px, 5vw, 56px) clamp(20px, 4vw, 40px) 72px;
+  width: 100%;
+}
+
+.page-frame {
+  animation: page-in 420ms var(--ease-out) both;
+}
+
+.page-frame.is-back {
+  animation-name: page-in-back;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes page-in-back {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.eyebrow {
+  color: var(--accent-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

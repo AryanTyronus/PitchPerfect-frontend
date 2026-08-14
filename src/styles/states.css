@@ -1,0 +1,86 @@
+/* ============================================================
+   States / errors / loading / not-found
+   ============================================================ */
+
+.state-panel {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 48px auto;
+  max-width: 560px;
+  padding: 42px 34px;
+  text-align: center;
+}
+
+.state-panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.018em;
+}
+
+.state-panel p {
+  color: var(--muted-strong);
+  line-height: 1.6;
+  max-width: 40ch;
+}
+
+.state-panel-error,
+.state-panel.state-panel-error {
+  border-color: color-mix(in oklch, var(--danger) 30%, var(--border));
+}
+
+.loader {
+  animation: spin 900ms linear infinite;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  height: 40px;
+  width: 40px;
+}
+
+.not-found {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 50vh;
+  justify-content: center;
+  text-align: center;
+}
+
+.not-found-mark {
+  align-items: center;
+  background: var(--fg);
+  border-radius: 16px;
+  color: var(--stage-fg);
+  display: inline-flex;
+  height: 72px;
+  justify-content: center;
+  margin-bottom: 10px;
+  width: 72px;
+}
+
+.not-found-mark svg {
+  height: 38px;
+  width: 38px;
+}
+
+.not-found h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.not-found p {
+  color: var(--muted-strong);
+  max-width: 40ch;
+}
+
+.not-found .eyebrow {
+  margin-bottom: -4px;
+}

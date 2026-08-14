@@ -5,6 +5,9 @@ import { QuestionPanel } from '../components/interview/QuestionPanel'
 import { TimerPanel } from '../components/interview/TimerPanel'
 import { WarningBanner } from '../components/interview/WarningBanner'
 import { RecordingControls } from '../components/recording/RecordingControls'
+import { RIBBON_WORDS } from '../components/ribbon/ribbonPresets'
+import { SpeechRibbon } from '../components/ribbon/SpeechRibbon'
+import type { RibbonFlow } from '../components/ribbon/ribbonPresets'
 import { Badge } from '../components/ui/Badge'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
@@ -109,6 +112,87 @@ export function InterviewRoomPage({
           ? 'ASKING'
           : 'IDLE'
 
+  const isWarning = status?.warning || (timer.isUrgent && !timeExpired)
+
+  const ribbon = (() => {
+    if (timeExpired) {
+      return {
+        compact: false,
+        flow: 'still',
+        frozen: true,
+        intensity: 0,
+        label: 'Answer closed',
+        pulsing: false,
+        tone: 'danger',
+      } as const
+    }
+    if (isWarning) {
+      return {
+        compact: true,
+        flow: 'forward',
+        frozen: false,
+        intensity: 0.9,
+        label: 'Final seconds — hold the close',
+        pulsing: recorder.state === 'RECORDING',
+        tone: 'warning',
+      } as const
+    }
+    if (recorder.state === 'RECORDING') {
+      return {
+        compact: false,
+        flow: 'forward',
+        frozen: false,
+        intensity: 0.72,
+        label: 'Answer flowing',
+        pulsing: true,
+        tone: 'live',
+      } as const
+    }
+    if (interviewerState === 'THINKING') {
+      return {
+        compact: false,
+        flow: 'still',
+        frozen: false,
+        intensity: 0.18,
+        label: 'Reading your answer',
+        organizing: true,
+        pulsing: false,
+        tone: 'neutral',
+      } as const
+    }
+    if (interviewerState === 'ASKING') {
+      return {
+        compact: false,
+        flow: 'reverse',
+        frozen: false,
+        intensity: 0.42,
+        label: 'Question open',
+        pulsing: false,
+        tone: 'neutral',
+      } as const
+    }
+    if (interviewerState === 'LISTENING') {
+      return {
+        compact: false,
+        flow: 'forward',
+        frozen: false,
+        intensity: 0.6,
+        label: 'Listening',
+        pulsing: true,
+        tone: 'live',
+      } as const
+    }
+    return {
+      compact: false,
+      flow: 'forward',
+      frozen: false,
+      intensity: 0.18,
+      label: 'Ready',
+      pulsing: false,
+      tone: 'neutral',
+    } as const
+  })()
+
   if (questionError && !question) {
     return (
       <ErrorState
@@ -130,10 +214,10 @@ export function InterviewRoomPage({
   }
 
   return (
-    <div className="interview-page">
-      <section className="interview-header">
+    <div className="interview-page" data-od-id="interview-room">
+      <header className="interview-header">
         <div>
-          <p className="eyebrow">PitchPerfect interview room</p>
+          <p className="eyebrow">Interview room</p>
           <h1>Practice answer</h1>
         </div>
         <div className="header-status">
@@ -145,7 +229,25 @@ export function InterviewRoomPage({
             tone={recorder.permissionError ? 'error' : 'success'}
           />
         </div>
-      </section>
+      </header>
+
+      <div className="interview-ribbon" data-od-id="answer-stream">
+        <SpeechRibbon
+          compact={ribbon.compact}
+          flow={ribbon.flow as RibbonFlow}
+          frozen={ribbon.frozen}
+          intensity={ribbon.intensity}
+          labelTone={ribbon.tone}
+          organizing={(ribbon as { organizing?: boolean }).organizing ?? false}
+          pulsing={ribbon.pulsing}
+          stateLabel={ribbon.label}
+          variant="stream"
+          words={RIBBON_WORDS.speech}
+        />
+        <span className="interview-ribbon-scale" aria-hidden="true">
+          so the takeaway —
+        </span>
+      </div>
 
       {statusError ? <p className="sync-warning">{statusError}</p> : null}
       <WarningBanner state={status.state} warning={status.warning} />

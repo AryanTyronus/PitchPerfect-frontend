@@ -1,0 +1,65 @@
+/* ============================================================
+   Space theme — first-class theme via design-token overrides.
+   The same components render under both themes; only the tokens
+   change. No component or route duplication.
+   ============================================================ */
+
+:root[data-theme='space'] {
+  color-scheme: dark;
+
+  --bg: oklch(19% 0.035 285);
+  --surface: oklch(23% 0.042 285);
+  --fg: oklch(95% 0.012 275);
+  --muted: oklch(70% 0.03 280);
+  --border: oklch(38% 0.03 285);
+  --accent: oklch(66% 0.16 300);
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+
+  --accent-strong: oklch(58% 0.16 305);
+  --accent-soft: oklch(29% 0.055 300);
+  --accent-line: oklch(46% 0.06 300);
+  --fg-invert: oklch(18% 0.03 285);
+  --surface-raised: oklch(26% 0.04 285);
+  --surface-inset: oklch(21% 0.035 285);
+  --muted-strong: oklch(78% 0.02 280);
+  --signal: oklch(76% 0.11 200);
+  --signal-strong: oklch(66% 0.11 205);
+  --signal-soft: oklch(27% 0.05 200);
+  --warn: oklch(78% 0.12 80);
+  --warn-strong: oklch(70% 0.12 85);
+  --warn-soft: oklch(29% 0.045 80);
+  --danger: oklch(70% 0.16 25);
+  --danger-strong: oklch(62% 0.16 25);
+  --danger-soft: oklch(29% 0.045 25);
+  --stage: oklch(14% 0.02 290);
+  --stage-raise: oklch(20% 0.03 290);
+  --stage-fg: oklch(96% 0.01 280);
+  --stage-muted: oklch(72% 0.02 280);
+  --stage-line: rgba(255, 255, 255, 0.1);
+  --shadow-soft: 0 1px 2px oklch(8% 0.02 290 / 0.4), 0 10px 30px oklch(8% 0.02 290 / 0.45);
+  --shadow-lift: 0 2px 4px oklch(8% 0.02 290 / 0.45), 0 20px 50px oklch(8% 0.02 290 / 0.55);
+
+  color: var(--fg);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 38% 68%, rgba(255, 255, 255, 0.32), transparent),
+    radial-gradient(1.5px 1.5px at 64% 13%, rgba(178, 205, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 83% 52%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 24% 84%, rgba(255, 255, 255, 0.28), transparent),
+    radial-gradient(1px 1px at 52% 44%, rgba(255, 255, 255, 0.22), transparent);
+  background-repeat: repeat;
+}
+
+/* Darker backdrop for stage surfaces keeps the camera/analysis frames deep. */
+:root[data-theme='space'] .hero-ribbon::before {
+  background: linear-gradient(
+      180deg,
+      var(--bg) 0%,
+      transparent 30%,
+      transparent 70%,
+      var(--bg) 100%
+    ),
+    linear-gradient(90deg, var(--bg) 0%, transparent 10%, transparent 90%, var(--bg) 100%);
+}

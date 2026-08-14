@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export type AppRoute =
   | { name: 'landing'; path: '/' }
@@ -7,6 +7,8 @@ export type AppRoute =
   | { name: 'processing'; path: '/processing/:sessionId'; sessionId: string }
   | { name: 'results'; path: '/results/:sessionId'; sessionId: string }
   | { name: 'not-found'; path: '*' }
+
+export type NavigationDirection = 'forward' | 'back'
 
 function parseRoute(pathname: string): AppRoute {
   const interviewMatch = pathname.match(/^\/interview\/([^/]+)$/)
@@ -51,18 +53,33 @@ export function useAppRouter() {
   const [route, setRoute] = useState<AppRoute>(() =>
     parseRoute(window.location.pathname),
   )
+  const [direction, setDirection] = useState<NavigationDirection>('forward')
+  const depthRef = useRef(0)
 
   useEffect(() => {
-    const handlePopState = () => setRoute(parseRoute(window.location.pathname))
+    const handlePopState = () => {
+      depthRef.current = Math.max(depthRef.current - 1, 0)
+      setDirection('back')
+      setRoute(parseRoute(window.location.pathname))
+    }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
   const navigate = useCallback((path: string) => {
     window.history.pushState({}, '', path)
+    depthRef.current += 1
+    setDirection('forward')
     setRoute(parseRoute(path))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  return useMemo(() => ({ route, navigate }), [navigate, route])
+  const key = route.name === 'interview' || route.name === 'processing' || route.name === 'results'
+    ? `${route.name}/${route.sessionId}`
+    : route.path
+
+  return useMemo(
+    () => ({ direction, key, navigate, route }),
+    [direction, key, navigate, route],
+  )
 }
