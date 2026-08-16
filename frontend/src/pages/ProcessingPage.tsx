@@ -52,6 +52,17 @@ export function ProcessingPage({ onNavigate, sessionId }: ProcessingPageProps) {
     }
   }, [onNavigate, sessionId])
 
+  if (status?.evaluationStatus === 'failed') {
+    return (
+      <ErrorState
+        actionLabel="Back to setup"
+        message="The evaluation failed for this session. Please try recording a new answer."
+        onAction={() => onNavigate('/setup')}
+        title="Evaluation unavailable"
+      />
+    )
+  }
+
   if (error) {
     return (
       <ErrorState

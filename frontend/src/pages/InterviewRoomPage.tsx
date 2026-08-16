@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CameraPreview } from '../components/interview/CameraPreview'
 import { InterviewerPanel } from '../components/interview/InterviewerPanel'
 import { QuestionPanel } from '../components/interview/QuestionPanel'
@@ -18,6 +18,7 @@ import { useSessionStatus } from '../hooks/useSessionStatus'
 import { useSessionTimerPresentation } from '../hooks/useSessionTimerPresentation'
 import { useTimerAudio } from '../hooks/useTimerAudio'
 import { useTimerAudioTransitions } from '../hooks/useTimerAudioTransitions'
+import { AudioStreamClient } from '../services/audioStream'
 import { sessionsApi } from '../services/sessionsApi'
 import type { InterviewerUiState } from '../types/interview'
 
@@ -42,6 +43,9 @@ export function InterviewRoomPage({
   const recorder = useMediaRecorder()
   const timerAudio = useTimerAudio()
   const { cutoffRecording, state: recordingState } = recorder
+  const [liveTranscript, setLiveTranscript] = useState('')
+  const [liveStreamError, setLiveStreamError] = useState<string | null>(null)
+  const streamClientRef = useRef<AudioStreamClient | null>(null)
   const timeExpired = status?.state === 'TIME_EXPIRED'
   const isProcessing =
     status?.state === 'PROCESSING' ||
@@ -63,9 +67,34 @@ export function InterviewRoomPage({
 
   useTimerAudioTransitions(status, timerAudio)
 
+  useEffect(() => {
+    const client = new AudioStreamClient({
+      onError: (message) => setLiveStreamError(message),
+      onPartial: (message) => {
+        const text = message.text?.trim()
+        if (!text) {
+          return
+        }
+        setLiveStreamError(null)
+        setLiveTranscript((current) => (current ? `${current} ${text}` : text))
+      },
+    })
+    streamClientRef.current = client
+
+    return () => {
+      client.close()
+      streamClientRef.current = null
+    }
+  }, [])
+
   async function startAnswerRecording() {
     await timerAudio.unlockAudio()
-    const recordingStarted = await recorder.startRecording()
+    setLiveTranscript('')
+    setLiveStreamError(null)
+    streamClientRef.current?.connect()
+    const recordingStarted = await recorder.startRecording((chunk) => {
+      streamClientRef.current?.send(chunk)
+    })
 
     if (!recordingStarted) {
       return
@@ -97,6 +126,7 @@ export function InterviewRoomPage({
       await sessionsApi.uploadResponse(sessionId, recorder.recordedMedia)
       recorder.setProcessing()
       await refreshStatus()
+      streamClientRef.current?.close()
       onNavigate(`/processing/${sessionId}`)
     } catch {
       recorder.setError('Upload error. Please try submitting again.')
@@ -248,6 +278,14 @@ export function InterviewRoomPage({
           so the takeaway —
         </span>
       </div>
+
+      {liveStreamError ? (
+        <p className="live-caption live-caption-error">{liveStreamError}</p>
+      ) : liveTranscript ? (
+        <p className="live-caption" data-od-id="live-transcript">
+          {liveTranscript}
+        </p>
+      ) : null}
 
       {statusError ? <p className="sync-warning">{statusError}</p> : null}
       <WarningBanner state={status.state} warning={status.warning} />

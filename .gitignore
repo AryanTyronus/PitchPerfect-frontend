@@ -22,3 +22,61 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build/tooling caches
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.secrets
+.secrets.*
+secrets.json
+config.private.json
+
+# API Keys & Credentials
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+service-account-key.json
+firebase-key.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+supabase/migrations/
+supabase/seed.sql
+
+# IDE & OS specific
+*.swp
+*.swo
+*~
+.env.*.sw[po]
+Thumbs.db
+
+# Sensitive data patterns
+**/private/**
+**/secrets/**
+**/.secrets/**
+**/*secret*
+**/*token*
+**/*key*
+**/*password*
+**/*credential*
+
+# Build artifacts with sensitive content
+.next/
+.nuxt/
+.cache/

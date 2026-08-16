@@ -19,6 +19,12 @@ OPENROUTER_LLM_MODEL: str = os.getenv("OPENROUTER_LLM_MODEL", "openai/gpt-4o-min
 ALLOWED_ORIGINS: list[str] = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    # Vite dev server default (view-link.cx/MDCGbOZQcVv resolves here).
+    "https://pitch-perfect-frontend-ochre.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    # TODO: add the production Vercel frontend URL, e.g.
+    # "https://pitchperfect.vercel.app",
 ]
 
 if os.getenv("ALLOWED_ORIGINS"):

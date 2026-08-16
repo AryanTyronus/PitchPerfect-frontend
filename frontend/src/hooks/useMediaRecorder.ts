@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RecordedMedia, RecordingState } from '../types/interview'
 
+const CHUNK_TIMESLICE_MS = 500
+
 export function useMediaRecorder() {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [state, setState] = useState<RecordingState>('READY')
@@ -85,43 +87,45 @@ export function useMediaRecorder() {
     }
   }, [recordedMedia])
 
-  const startRecording = useCallback(async () => {
-    const activeStream =
-      streamRef.current &&
-      streamRef.current.getTracks().some((track) => track.readyState === 'live')
-        ? streamRef.current
-        : await requestMedia()
+  const startRecording = useCallback(
+    async (onChunk?: (chunk: Blob) => void) => {
+      const activeStream =
+        streamRef.current &&
+        streamRef.current.getTracks().some((track) => track.readyState === 'live')
+          ? streamRef.current
+          : await requestMedia()
 
-    if (!activeStream) {
-      setState('ERROR')
-      setRecordingError('Camera and microphone access is required before recording.')
-      return false
-    }
-
-    if (!window.MediaRecorder) {
-      setState('ERROR')
-      setRecordingError('MediaRecorder is not supported in this browser.')
-      return false
-    }
-
-    try {
-      chunksRef.current = []
-      if (recordedMedia) {
-        URL.revokeObjectURL(recordedMedia.url)
+      if (!activeStream) {
+        setState('ERROR')
+        setRecordingError('Camera and microphone access is required before recording.')
+        return false
       }
-      setRecordedMedia(null)
-      setRecordingError(null)
 
-      const recorder = new MediaRecorder(activeStream)
-      recorderRef.current = recorder
-      startedAtRef.current = Date.now()
-      setDurationSeconds(0)
+      if (!window.MediaRecorder) {
+        setState('ERROR')
+        setRecordingError('MediaRecorder is not supported in this browser.')
+        return false
+      }
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data)
+      try {
+        chunksRef.current = []
+        if (recordedMedia) {
+          URL.revokeObjectURL(recordedMedia.url)
         }
-      }
+        setRecordedMedia(null)
+        setRecordingError(null)
+
+        const recorder = new MediaRecorder(activeStream)
+        recorderRef.current = recorder
+        startedAtRef.current = Date.now()
+        setDurationSeconds(0)
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunksRef.current.push(event.data)
+            onChunk?.(event.data)
+          }
+        }
 
       recorder.onstop = () => {
         const mimeType = recorder.mimeType || 'video/webm'
@@ -141,7 +145,7 @@ export function useMediaRecorder() {
         setRecordingError('Recording failed. Please try again.')
       }
 
-      recorder.start()
+      recorder.start(CHUNK_TIMESLICE_MS)
       setState('RECORDING')
       return true
     } catch {

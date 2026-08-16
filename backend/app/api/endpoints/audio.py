@@ -31,7 +31,14 @@ async def calculate_metrics(result: TranscriptionResult) -> SpeechMetrics:
 
 async def audio_websocket(websocket: WebSocket) -> None:
     await websocket.accept()
-    engine = get_stt_engine()
+    try:
+        engine = get_stt_engine()
+    except Exception:
+        # STT provider not configured (e.g. missing GROQ_API_KEY). Tell the
+        # client transcription is unavailable instead of dropping the socket.
+        await websocket.send_json({"type": "error", "message": "transcription unavailable"})
+        await websocket.close()
+        return
     try:
         while True:
             try:
