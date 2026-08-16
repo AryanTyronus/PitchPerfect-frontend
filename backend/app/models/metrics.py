@@ -35,6 +35,7 @@ class TranscriptionResult(BaseModel):
     text: str
     duration: float = Field(ge=0)
     words: List[WordTimestamp]
+    eye_contact_percentage: float | None = Field(default=None, ge=0, le=100)
 
 
 class SpeechMetrics(BaseModel):

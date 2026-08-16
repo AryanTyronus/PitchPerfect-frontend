@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 
 interface CameraPreviewProps {
   stream: MediaStream | null
@@ -6,6 +7,7 @@ interface CameraPreviewProps {
   isRecording: boolean
   isTimeExpired: boolean
   microphoneEnabled: boolean
+  videoRef?: RefObject<HTMLVideoElement | null>
 }
 
 export function CameraPreview({
@@ -14,6 +16,7 @@ export function CameraPreview({
   isRecording,
   isTimeExpired,
   microphoneEnabled,
+  videoRef: forwardedVideoRef,
 }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [cameraEnabled, setCameraEnabled] = useState(true)
@@ -45,7 +48,17 @@ export function CameraPreview({
   return (
     <div className={stageClass} data-od-id="camera-preview">
       {stream && cameraEnabled ? (
-        <video autoPlay muted playsInline ref={videoRef} />
+        <video
+          autoPlay
+          muted
+          playsInline
+          ref={(element) => {
+            videoRef.current = element
+            if (forwardedVideoRef) {
+              forwardedVideoRef.current = element
+            }
+          }}
+        />
       ) : (
         <div className="camera-placeholder">
           <span>Camera preview</span>

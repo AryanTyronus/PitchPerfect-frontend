@@ -21,11 +21,19 @@ export interface UploadResponse {
   message: string
 }
 
+export interface UploadResponseOptions {
+  eyeContactPercentage?: number
+}
+
 export interface SessionsApi {
   createSession(config: SessionConfig): Promise<Session>
   beginResponse(sessionId: string): Promise<SessionStatus>
   getCurrentQuestion(sessionId: string): Promise<Question>
   getSessionStatus(sessionId: string): Promise<SessionStatus>
-  uploadResponse(sessionId: string, media: RecordedMedia): Promise<UploadResponse>
+  uploadResponse(
+    sessionId: string,
+    media: RecordedMedia,
+    options?: UploadResponseOptions,
+  ): Promise<UploadResponse>
   getResult(sessionId: string): Promise<EvaluationResult>
 }

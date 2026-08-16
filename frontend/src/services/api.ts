@@ -19,6 +19,7 @@ export interface TranscriptionResult {
   text: string
   duration: number
   words: WordTimestamp[]
+  eye_contact_percentage?: number | null
 }
 
 export interface SpeechMetrics {

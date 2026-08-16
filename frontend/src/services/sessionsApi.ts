@@ -8,7 +8,7 @@ import { mockSessionsApi } from '../mocks/mockSessionsApi'
 import { ApiClientError } from './apiClient'
 import * as api from './api'
 import type { EvaluationResult as BackendEvaluationResult, TranscriptionResult } from './api'
-import type { SessionsApi, UploadResponse } from '../types/api'
+import type { SessionsApi, UploadResponse, UploadResponseOptions } from '../types/api'
 import type { EvaluationResult } from '../types/evaluation'
 import type { Question, RecordedMedia } from '../types/interview'
 import type {
@@ -248,6 +248,7 @@ export const fastApiSessionsApi: SessionsApi = {
   async uploadResponse(
     sessionId: string,
     media: RecordedMedia,
+    options?: UploadResponseOptions,
   ): Promise<UploadResponse> {
     const runtime = requireRuntime(sessionId)
 
@@ -264,10 +265,13 @@ export const fastApiSessionsApi: SessionsApi = {
 
     // Transcribe the full recording, then kick off evaluation in the
     // background so the processing page can surface the real analysis time.
-    const transcription = await api.transcribeAudio(
-      media.blob,
-      media.mimeType.includes('wav') ? 'audio.wav' : 'audio.webm',
-    )
+    const transcription: TranscriptionResult = {
+      ...(await api.transcribeAudio(
+        media.blob,
+        media.mimeType.includes('wav') ? 'audio.wav' : 'audio.webm',
+      )),
+      eye_contact_percentage: options?.eyeContactPercentage ?? null,
+    }
 
     if (!transcription.text.trim()) {
       runtime.evaluationStatus = 'failed'

@@ -13,6 +13,7 @@ import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { StatusIndicator } from '../components/ui/StatusIndicator'
 import { useCurrentQuestion } from '../hooks/useCurrentQuestion'
+import { useEyeContactTracker } from '../hooks/useEyeContactTracker'
 import { useMediaRecorder } from '../hooks/useMediaRecorder'
 import { useSessionStatus } from '../hooks/useSessionStatus'
 import { useSessionTimerPresentation } from '../hooks/useSessionTimerPresentation'
@@ -42,6 +43,11 @@ export function InterviewRoomPage({
   const timer = useSessionTimerPresentation(status)
   const recorder = useMediaRecorder()
   const timerAudio = useTimerAudio()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const { eyeContactPercentage } = useEyeContactTracker(
+    videoRef,
+    recorder.state === 'RECORDING',
+  )
   const { cutoffRecording, state: recordingState } = recorder
   const [liveTranscript, setLiveTranscript] = useState('')
   const [liveStreamError, setLiveStreamError] = useState<string | null>(null)
@@ -123,7 +129,9 @@ export function InterviewRoomPage({
     recorder.setUploading()
 
     try {
-      await sessionsApi.uploadResponse(sessionId, recorder.recordedMedia)
+      await sessionsApi.uploadResponse(sessionId, recorder.recordedMedia, {
+        eyeContactPercentage,
+      })
       recorder.setProcessing()
       await refreshStatus()
       streamClientRef.current?.close()
@@ -299,6 +307,7 @@ export function InterviewRoomPage({
             isTimeExpired={timeExpired}
             microphoneEnabled={!recorder.permissionError && !timeExpired}
             stream={recorder.stream}
+            videoRef={videoRef}
           />
         </div>
         <aside className="interview-side">
