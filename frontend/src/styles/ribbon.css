@@ -293,6 +293,32 @@
   text-align: right;
 }
 
+/* Eye-contact channel uses score thresholds instead of the accent ramp:
+   >70% strong, 40-70% moderate, <40% needs work. */
+.channel-row--good .channel-track span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--signal-strong) 84%, var(--signal)),
+    var(--signal)
+  );
+}
+
+.channel-row--moderate .channel-track span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--warn-strong) 84%, var(--warn)),
+    var(--warn)
+  );
+}
+
+.channel-row--needs-work .channel-track span {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--danger-strong) 84%, var(--danger)),
+    var(--danger)
+  );
+}
+
 @keyframes channel-flow {
   from {
     width: 0;

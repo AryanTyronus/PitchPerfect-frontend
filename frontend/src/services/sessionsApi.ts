@@ -117,6 +117,7 @@ function clampScore(value: unknown, fallback = 0): number {
 function toUiEvaluation(
   sessionId: string,
   evaluation: BackendEvaluationResult,
+  transcriptionEyeContact?: number | null,
 ): EvaluationResult {
   const strengths = Array.isArray(evaluation.strengths)
     ? evaluation.strengths.map(String)
@@ -125,14 +126,29 @@ function toUiEvaluation(
     ? evaluation.improvements.map(String)
     : []
 
+  // Prefer the evaluation's own value, falling back to the percentage that was
+  // attached to the transcription we sent up (the backend echoes it back).
+  const rawEyeContact =
+    evaluation.eye_contact_percentage ?? transcriptionEyeContact ?? null
+  const eyeContactPercentage =
+    typeof rawEyeContact === 'number' && Number.isFinite(rawEyeContact)
+      ? clampScore(rawEyeContact)
+      : null
+
+  const metrics: EvaluationResult['metrics'] = [
+    { label: 'Clarity', score: clampScore(evaluation.clarity?.score) },
+    { label: 'Confidence', score: clampScore(evaluation.confidence?.score) },
+    { label: 'Structure', score: clampScore(evaluation.structure?.score) },
+  ]
+  if (eyeContactPercentage !== null) {
+    metrics.push({ label: 'Eye Contact', score: eyeContactPercentage })
+  }
+
   return {
     sessionId,
     overallScore: clampScore(evaluation.overall_score),
-    metrics: [
-      { label: 'Clarity', score: clampScore(evaluation.clarity?.score) },
-      { label: 'Confidence', score: clampScore(evaluation.confidence?.score) },
-      { label: 'Structure', score: clampScore(evaluation.structure?.score) },
-    ],
+    metrics,
+    eyeContactPercentage,
     strengths,
     improvements,
     nextPractice:
@@ -317,7 +333,11 @@ export const fastApiSessionsApi: SessionsApi = {
     }
 
     if (runtime?.evaluation) {
-      return toUiEvaluation(sessionId, runtime.evaluation)
+      return toUiEvaluation(
+        sessionId,
+        runtime.evaluation,
+        runtime.transcription?.eye_contact_percentage,
+      )
     }
 
     if (runtime?.evaluationStatus === 'failed') {
@@ -332,7 +352,11 @@ export const fastApiSessionsApi: SessionsApi = {
     // from the persisted backend record.
     const record = await api.getSession(sessionId)
     if (record.evaluation) {
-      return toUiEvaluation(sessionId, record.evaluation)
+      return toUiEvaluation(
+        sessionId,
+        record.evaluation,
+        record.transcription?.eye_contact_percentage,
+      )
     }
 
     throw new ApiClientError(

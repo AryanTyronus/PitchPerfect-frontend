@@ -34,6 +34,7 @@ describe('FastAPI integration (live backend)', () => {
 
       expect(result.sessionId).toBe(record.id)
       expect(typeof result.overallScore).toBe('number')
+      expect('eyeContactPercentage' in result).toBe(true)
       expect(result.metrics.length).toBeGreaterThan(0)
       for (const metric of result.metrics) {
         expect(typeof metric.label).toBe('string')

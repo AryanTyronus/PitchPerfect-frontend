@@ -67,6 +67,7 @@ class EvaluationResult(BaseModel):
     clarity: MetricScore
     confidence: MetricScore
     structure: MetricScore
+    eye_contact_percentage: float | None = Field(default=None, ge=0, le=100)
     strengths: List[str] = Field(default_factory=list, max_length=10)
     improvements: List[str] = Field(default_factory=list, max_length=10)
     source: str = "local"

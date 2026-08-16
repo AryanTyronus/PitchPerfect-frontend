@@ -40,9 +40,18 @@ export function RibbonChannels({ metrics, animate = true }: RibbonChannelsProps)
             ...(animate ? { transitionDelay: `${140 + index * 70}ms` } : {}),
           } as CSSProperties
 
+          const toneClass =
+            metric.label === 'Eye Contact'
+              ? clamped > 70
+                ? ' channel-row--good'
+                : clamped >= 40
+                  ? ' channel-row--moderate'
+                  : ' channel-row--needs-work'
+              : ''
+
           return (
             <li
-              className="channel-row"
+              className={`channel-row${toneClass}`}
               data-od-id={`channel-${metric.label.toLowerCase()}`}
               key={metric.label}
             >

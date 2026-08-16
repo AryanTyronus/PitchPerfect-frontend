@@ -10,10 +10,22 @@ router = APIRouter(prefix="/interview", tags=["interview"])
 @router.post("/evaluate", response_model=EvaluationResult)
 async def evaluate(transcription: TranscriptionResult) -> EvaluationResult:
     metrics = calculate_speech_metrics(transcription)
-    return await evaluate_answer(transcription.text, metrics)
+    evaluation = await evaluate_answer(transcription.text, metrics)
+    # Echo the eye-contact percentage captured client-side back to the caller
+    # so the results UI can render it alongside the speech metrics.
+    return evaluation.model_copy(
+        update={"eye_contact_percentage": transcription.eye_contact_percentage}
+    )
 
 
 @router.post("/analyze", response_model=dict[str, object])
 async def analyze(transcription: TranscriptionResult) -> dict[str, object]:
     metrics: SpeechMetrics = calculate_speech_metrics(transcription)
-    return {"transcription": transcription, "metrics": metrics, "evaluation": await evaluate_answer(transcription.text, metrics)}
+    evaluation = await evaluate_answer(transcription.text, metrics)
+    return {
+        "transcription": transcription,
+        "metrics": metrics,
+        "evaluation": evaluation.model_copy(
+            update={"eye_contact_percentage": transcription.eye_contact_percentage}
+        ),
+    }

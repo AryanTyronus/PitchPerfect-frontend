@@ -45,6 +45,7 @@ export interface EvaluationResult {
   clarity: MetricScore
   confidence: MetricScore
   structure: MetricScore
+  eye_contact_percentage?: number | null
   strengths: string[]
   improvements: string[]
   source: string

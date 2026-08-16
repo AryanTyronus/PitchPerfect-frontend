@@ -110,6 +110,72 @@ describe('ResultsPage', () => {
     expect(bars[4]).toHaveAttribute('aria-valuenow', '85')
   })
 
+  it('renders the Eye Contact metric with a score threshold tone', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      metrics: [
+        { label: 'Clarity', score: 88 },
+        { label: 'Confidence', score: 81 },
+        { label: 'Structure', score: 86 },
+        { label: 'Eye Contact', score: 82 },
+      ],
+      eyeContactPercentage: 82,
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Eye Contact')).toBeInTheDocument())
+
+    const bar = screen.getByRole('progressbar', { name: 'Eye Contact progress' })
+    expect(bar).toHaveAttribute('aria-valuenow', '82')
+    const row = screen.getByText('Eye Contact').closest('li')
+    expect(row).toHaveClass('channel-row--good')
+  })
+
+  it('marks moderate eye contact with the warning tone', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      metrics: [
+        { label: 'Clarity', score: 88 },
+        { label: 'Confidence', score: 81 },
+        { label: 'Structure', score: 86 },
+        { label: 'Eye Contact', score: 55 },
+      ],
+      eyeContactPercentage: 55,
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Eye Contact')).toBeInTheDocument())
+
+    const bar = screen.getByRole('progressbar', { name: 'Eye Contact progress' })
+    expect(bar).toHaveAttribute('aria-valuenow', '55')
+    const row = screen.getByText('Eye Contact').closest('li')
+    expect(row).toHaveClass('channel-row--moderate')
+  })
+
+  it('marks low eye contact with the needs-work tone', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      metrics: [
+        { label: 'Clarity', score: 88 },
+        { label: 'Confidence', score: 81 },
+        { label: 'Structure', score: 86 },
+        { label: 'Eye Contact', score: 35 },
+      ],
+      eyeContactPercentage: 35,
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Eye Contact')).toBeInTheDocument())
+
+    const bar = screen.getByRole('progressbar', { name: 'Eye Contact progress' })
+    expect(bar).toHaveAttribute('aria-valuenow', '35')
+    const row = screen.getByText('Eye Contact').closest('li')
+    expect(row).toHaveClass('channel-row--needs-work')
+  })
+
   it('renders the strengths returned by the API', async () => {
     renderPage()
 
