@@ -8,6 +8,9 @@ from app.services.transcript_norm import clean_text
 router = APIRouter(prefix="/audio", tags=["audio"])
 _stt_engine: STTEngine | None = None
 
+MIN_AUDIO_DURATION_SECONDS = 3.0
+MIN_AUDIO_BYTES = 1024
+
 
 def get_stt_engine() -> STTEngine:
     global _stt_engine
@@ -16,11 +19,33 @@ def get_stt_engine() -> STTEngine:
     return _stt_engine
 
 
+def validate_audio_duration(audio_bytes: bytes, filename: str) -> float:
+    """Estimate audio duration from file size. Returns duration in seconds."""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
+    if ext == "wav":
+        return len(audio_bytes) / 32000.0
+    return len(audio_bytes) / 16000.0
+
+
 @router.post("/transcribe", response_model=TranscriptionResult)
 async def transcribe_audio(file: UploadFile = File(...)) -> TranscriptionResult:
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Uploaded audio file is empty")
+
+    if len(audio_bytes) < MIN_AUDIO_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail="Audio file too small. Please record at least 3 seconds of audio.",
+        )
+
+    estimated_duration = validate_audio_duration(audio_bytes, file.filename or "temp.wav")
+    if estimated_duration < MIN_AUDIO_DURATION_SECONDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Audio too short ({estimated_duration:.1f}s). Please record at least {MIN_AUDIO_DURATION_SECONDS} seconds.",
+        )
+
     return await get_stt_engine().transcribe_audio_bytes(audio_bytes, file.filename or "temp.wav")
 
 

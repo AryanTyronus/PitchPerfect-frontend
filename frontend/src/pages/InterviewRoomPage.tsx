@@ -136,8 +136,12 @@ export function InterviewRoomPage({
       await refreshStatus()
       streamClientRef.current?.close()
       onNavigate(`/processing/${sessionId}`)
-    } catch {
-      recorder.setError('Upload error. Please try submitting again.')
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && (error as { code?: string }).code === 'NO_SPEECH_DETECTED') {
+        recorder.setError('No speech detected. Please record a clear answer of at least 3 seconds.')
+      } else {
+        recorder.setError('Upload error. Please try submitting again.')
+      }
     }
   }
 

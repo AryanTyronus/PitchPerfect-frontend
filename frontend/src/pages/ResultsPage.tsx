@@ -21,6 +21,7 @@ type ResultsLoadState =
   | { status: 'loading' }
   | { status: 'unavailable' }
   | { status: 'error' }
+  | { status: 'no_speech' }
   | { status: 'ready'; result: EvaluationResult }
 
 function isApiError(error: unknown): error is ApiError {
@@ -44,7 +45,15 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
       try {
         const result = await sessionsApi.getResult(sessionId)
         if (active) {
-          setState({ status: 'ready', result })
+          const isNoSpeech =
+            result.overallScore === 0 &&
+            (result.metrics.some((m) => m.score === 0 && m.label !== 'Eye Contact') ||
+              result.strengths.length === 0)
+          if (isNoSpeech) {
+            setState({ status: 'no_speech' })
+          } else {
+            setState({ status: 'ready', result })
+          }
         }
       } catch (error) {
         if (!active) {
@@ -86,6 +95,20 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
         <p>Evaluation is still running. Check again in a moment.</p>
         <Button onClick={retry} variant="secondary">
           Check Again
+        </Button>
+      </div>
+    )
+  }
+
+  if (state.status === 'no_speech') {
+    return (
+      <div className="state-panel no-speech-state" role="status">
+        <div className="no-speech-icon" aria-hidden="true">🎤</div>
+        <h2>No Speech Detected</h2>
+        <p>Your recording appears to be empty, too short, or contains no audible speech.</p>
+        <p className="no-speech-hint">Please record a clear answer of at least 3 seconds.</p>
+        <Button onClick={() => onNavigate('/setup')} variant="primary">
+          Start New Practice
         </Button>
       </div>
     )

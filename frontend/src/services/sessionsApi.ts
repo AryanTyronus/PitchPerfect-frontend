@@ -294,6 +294,7 @@ export const fastApiSessionsApi: SessionsApi = {
       throw new ApiClientError(
         'No speech was detected in your recording. Please try again.',
         422,
+        'NO_SPEECH_DETECTED',
       )
     }
 

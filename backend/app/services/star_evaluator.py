@@ -1,7 +1,25 @@
 from app.models.metrics import EvaluationResult, MetricScore, SpeechMetrics
 
+MIN_TRANSCRIPT_WORDS = 3
+
 
 def evaluate_locally(text: str, metrics: SpeechMetrics) -> EvaluationResult:
+    words = text.strip().split()
+    if len(words) < MIN_TRANSCRIPT_WORDS:
+        zero_metric = MetricScore(
+            score=0.0,
+            rationale="No coherent speech was detected in the recording.",
+        )
+        return EvaluationResult(
+            overall_score=0.0,
+            clarity=zero_metric,
+            confidence=zero_metric,
+            structure=zero_metric,
+            strengths=[],
+            improvements=["Record a clear answer of at least 3 seconds with audible speech."],
+            source="local",
+        )
+
     pace = max(0.0, 100.0 - abs(metrics.words_per_minute - 140.0) * 0.6)
     clarity = max(0.0, 100.0 - metrics.filler_ratio * 300.0)
     confidence = min(100.0, 55.0 + metrics.energy_rms * 45.0)

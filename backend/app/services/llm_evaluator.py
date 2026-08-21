@@ -34,6 +34,11 @@ def _build_prompt(text: str) -> str:
         '"confidence": {"score": <0-100>, "rationale": "..."}, '
         '"structure": {"score": <0-100>, "rationale": "..."}, '
         '"strengths": ["...", "..."], "improvements": ["...", "..."]}. '
+        "CRITICAL RULE: If the provided transcript is empty, contains only repetitive noise, "
+        "or is completely unintelligible (e.g., random sounds, single words repeated, "
+        "or fewer than 3 meaningful words), you MUST return an overall score of 0 with "
+        "0 across all rubric dimensions (clarity, confidence, structure) and note that "
+        "no coherent response was provided. Do not hallucinate content or apply baseline scores. "
         f"Answer: {text}"
     )
 

@@ -288,3 +288,40 @@
 .next-practice .button {
   align-self: center;
 }
+
+/* ---- no speech detected state ---- */
+
+.no-speech-state {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.no-speech-icon {
+  font-size: 4rem;
+  opacity: 0.6;
+}
+
+.no-speech-state h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 650;
+  letter-spacing: -0.018em;
+  margin: 0;
+}
+
+.no-speech-state p {
+  color: var(--muted-strong);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 42ch;
+}
+
+.no-speech-hint {
+  color: var(--muted) !important;
+  font-size: 0.9rem !important;
+}
