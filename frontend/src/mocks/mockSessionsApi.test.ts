@@ -21,6 +21,8 @@ function media(): RecordedMedia {
     durationSeconds: 12,
     mimeType: 'video/webm',
     url: 'blob:mock',
+    audioBlob: new Blob(['mock-audio'], { type: 'audio/webm;codecs=opus' }),
+    audioMimeType: 'audio/webm;codecs=opus',
   }
 }
 

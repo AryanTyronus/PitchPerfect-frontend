@@ -2,6 +2,35 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RecordedMedia, RecordingState } from '../types/interview'
 
 const CHUNK_TIMESLICE_MS = 500
+// 32 kbps opus keeps clean voice capture while a 2-minute recording stays
+// well under 1 MB — small enough for the transcription upload limits.
+const AUDIO_BITS_PER_SECOND = 32000
+
+/** Best supported audio-only mime type for whisper-compatible uploads. */
+function selectAudioMimeType(): string {
+  if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) {
+    return ''
+  }
+  if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+    return 'audio/webm;codecs=opus'
+  }
+  if (MediaRecorder.isTypeSupported('audio/webm')) {
+    return 'audio/webm'
+  }
+  if (MediaRecorder.isTypeSupported('audio/mp4')) {
+    return 'audio/mp4'
+  }
+  return ''
+}
+
+/** Isolated audio stream so the dedicated audio recorder never muxes video. */
+function createAudioOnlyStream(stream: MediaStream): MediaStream {
+  const tracks = stream.getAudioTracks()
+  if (typeof MediaStream === 'undefined' || tracks.length === 0) {
+    return stream
+  }
+  return new MediaStream(tracks)
+}
 
 export function useMediaRecorder() {
   const [stream, setStream] = useState<MediaStream | null>(null)
@@ -11,7 +40,9 @@ export function useMediaRecorder() {
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [recordingError, setRecordingError] = useState<string | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
+  const audioChunksRef = useRef<BlobPart[]>([])
   const recorderRef = useRef<MediaRecorder | null>(null)
+  const audioRecorderRef = useRef<MediaRecorder | null>(null)
   const startedAtRef = useRef<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const mountedRef = useRef(false)
@@ -87,6 +118,18 @@ export function useMediaRecorder() {
     }
   }, [recordedMedia])
 
+  const stopActiveRecorders = useCallback(() => {
+    for (const recorder of [recorderRef.current, audioRecorderRef.current]) {
+      try {
+        if (recorder?.state === 'recording') {
+          recorder.stop()
+        }
+      } catch {
+        // Recorder already inactive; finalization handles the rest.
+      }
+    }
+  }, [])
+
   const startRecording = useCallback(
     async (onChunk?: (chunk: Blob) => void) => {
       const activeStream =
@@ -109,16 +152,75 @@ export function useMediaRecorder() {
 
       try {
         chunksRef.current = []
+        audioChunksRef.current = []
         if (recordedMedia) {
           URL.revokeObjectURL(recordedMedia.url)
         }
         setRecordedMedia(null)
         setRecordingError(null)
 
-        const recorder = new MediaRecorder(activeStream)
-        recorderRef.current = recorder
         startedAtRef.current = Date.now()
         setDurationSeconds(0)
+
+        // Composite A/V recorder: live preview playback only.
+        const recorder = new MediaRecorder(activeStream)
+        recorderRef.current = recorder
+
+        // Isolated lightweight audio recorder for the transcription upload.
+        const audioMimeType = selectAudioMimeType()
+        let audioRecorder: MediaRecorder | null = null
+        if (activeStream.getAudioTracks().length > 0) {
+          try {
+            const audioOptions: MediaRecorderOptions = {
+              audioBitsPerSecond: AUDIO_BITS_PER_SECOND,
+            }
+            if (audioMimeType) {
+              audioOptions.mimeType = audioMimeType
+            }
+            audioRecorder = new MediaRecorder(
+              createAudioOnlyStream(activeStream),
+              audioOptions,
+            )
+          } catch {
+            audioRecorder = null
+          }
+        }
+        audioRecorderRef.current = audioRecorder
+
+        let videoStopped = false
+        let audioStopped = !audioRecorder
+        let audioErrored = false
+        let capturedBlob: Blob | null = null
+        let capturedUrl: string | null = null
+        let capturedMime = 'video/webm'
+
+        const finalizeIfReady = () => {
+          if (!videoStopped) {
+            return
+          }
+          if (!audioStopped && !audioErrored) {
+            return
+          }
+          const hasAudio = Boolean(audioRecorder) && audioStopped && !audioErrored
+          const duration = startedAtRef.current
+            ? Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000))
+            : 0
+          const resolvedAudioMime =
+            (hasAudio && audioRecorder?.mimeType) || audioMimeType || 'audio/webm'
+          setRecordedMedia({
+            blob: capturedBlob ?? new Blob([]),
+            url: capturedUrl ?? '',
+            mimeType: capturedMime,
+            durationSeconds: duration,
+            audioBlob: hasAudio
+              ? new Blob(audioChunksRef.current, { type: resolvedAudioMime })
+              : capturedBlob ?? new Blob([], { type: resolvedAudioMime }),
+            audioMimeType: resolvedAudioMime,
+          })
+          setDurationSeconds(duration)
+          setState('RECORDED')
+          startedAtRef.current = null
+        }
 
         recorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -127,51 +229,61 @@ export function useMediaRecorder() {
           }
         }
 
-      recorder.onstop = () => {
-        const mimeType = recorder.mimeType || 'video/webm'
-        const blob = new Blob(chunksRef.current, { type: mimeType })
-        const url = URL.createObjectURL(blob)
-        const duration = startedAtRef.current
-          ? Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000))
-          : 0
-        setRecordedMedia({ blob, url, mimeType, durationSeconds: duration })
-        setDurationSeconds(duration)
-        setState('RECORDED')
-        startedAtRef.current = null
-      }
+        recorder.onstop = () => {
+          capturedMime = recorder.mimeType || 'video/webm'
+          capturedBlob = new Blob(chunksRef.current, { type: capturedMime })
+          capturedUrl = URL.createObjectURL(capturedBlob)
+          videoStopped = true
+          finalizeIfReady()
+        }
 
-      recorder.onerror = () => {
+        recorder.onerror = () => {
+          setState('ERROR')
+          setRecordingError('Recording failed. Please try again.')
+        }
+
+        if (audioRecorder) {
+          audioRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data)
+            }
+          }
+          audioRecorder.onstop = () => {
+            audioStopped = true
+            finalizeIfReady()
+          }
+          audioRecorder.onerror = () => {
+            audioErrored = true
+            finalizeIfReady()
+          }
+          audioRecorder.start(CHUNK_TIMESLICE_MS)
+        }
+
+        recorder.start(CHUNK_TIMESLICE_MS)
+        setState('RECORDING')
+        return true
+      } catch {
         setState('ERROR')
-        setRecordingError('Recording failed. Please try again.')
+        setRecordingError('Recording could not be started.')
+        return false
       }
-
-      recorder.start(CHUNK_TIMESLICE_MS)
-      setState('RECORDING')
-      return true
-    } catch {
-      setState('ERROR')
-      setRecordingError('Recording could not be started.')
-      return false
-    }
-  }, [recordedMedia, requestMedia])
+    },
+    [recordedMedia, requestMedia],
+  )
 
   const stopRecording = useCallback(() => {
-    if (recorderRef.current?.state === 'recording') {
-      recorderRef.current.stop()
-    }
-  }, [])
+    stopActiveRecorders()
+  }, [stopActiveRecorders])
 
   const cutoffRecording = useCallback(() => {
     try {
-      if (recorderRef.current?.state === 'recording') {
-        recorderRef.current.stop()
-      }
+      stopActiveRecorders()
     } catch {
       setRecordingError('Recording stopped unexpectedly.')
     } finally {
       releaseStream()
     }
-  }, [releaseStream])
+  }, [releaseStream, stopActiveRecorders])
 
   const setUploading = useCallback(() => setState('UPLOADING'), [])
   const setProcessing = useCallback(() => setState('PROCESSING'), [])

@@ -6,24 +6,34 @@ import { useMediaRecorder } from './useMediaRecorder'
 interface MockTrack {
   enabled: boolean
   readyState: 'live' | 'ended'
+  kind?: string
   stop: ReturnType<typeof vi.fn>
 }
 
 class MockMediaRecorder {
-  static lastInstance: MockMediaRecorder | null = null
-  mimeType = 'video/webm'
+  static instances: MockMediaRecorder[] = []
+  static isTypeSupported = vi.fn((mimeType: string) =>
+    mimeType === 'audio/webm;codecs=opus' || mimeType === 'video/webm',
+  )
+  stream: unknown
+  mimeType: string
+  audioBitsPerSecond: number | undefined
   ondataavailable: ((event: { data: Blob }) => void) | null = null
   onerror: (() => void) | null = null
   onstop: (() => void) | null = null
   state: 'inactive' | 'recording' = 'inactive'
   stop = vi.fn(() => {
     this.state = 'inactive'
-    this.ondataavailable?.({ data: new Blob(['mock'], { type: 'video/webm' }) })
+    const chunkType = this.mimeType.startsWith('audio/') ? this.mimeType : 'video/webm'
+    this.ondataavailable?.({ data: new Blob(['mock'], { type: chunkType }) })
     this.onstop?.()
   })
 
-  constructor() {
-    MockMediaRecorder.lastInstance = this
+  constructor(stream?: unknown, options?: { mimeType?: string; audioBitsPerSecond?: number }) {
+    this.stream = stream
+    this.mimeType = options?.mimeType ?? 'video/webm'
+    this.audioBitsPerSecond = options?.audioBitsPerSecond
+    MockMediaRecorder.instances.push(this)
   }
 
   start() {
@@ -31,10 +41,18 @@ class MockMediaRecorder {
   }
 }
 
+class MockMediaStream {
+  tracks: MockTrack[]
+  constructor(tracks: MockTrack[]) {
+    this.tracks = tracks
+  }
+}
+
 function installMediaMocks(options: { unsupported?: boolean; denied?: boolean } = {}) {
   const audioTrack: MockTrack = {
     enabled: true,
     readyState: 'live',
+    kind: 'audio',
     stop: vi.fn(() => {
       audioTrack.readyState = 'ended'
     }),
@@ -42,6 +60,7 @@ function installMediaMocks(options: { unsupported?: boolean; denied?: boolean } 
   const videoTrack: MockTrack = {
     enabled: true,
     readyState: 'live',
+    kind: 'video',
     stop: vi.fn(() => {
       videoTrack.readyState = 'ended'
     }),
@@ -65,6 +84,14 @@ function installMediaMocks(options: { unsupported?: boolean; denied?: boolean } 
     configurable: true,
     value: options.unsupported ? undefined : MockMediaRecorder,
   })
+  Object.defineProperty(window, 'MediaStream', {
+    configurable: true,
+    value: MockMediaStream,
+  })
+  Object.defineProperty(globalThis, 'MediaStream', {
+    configurable: true,
+    value: MockMediaStream,
+  })
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     value: vi.fn(() => 'blob:recording'),
@@ -79,7 +106,7 @@ function installMediaMocks(options: { unsupported?: boolean; denied?: boolean } 
 
 afterEach(() => {
   vi.restoreAllMocks()
-  MockMediaRecorder.lastInstance = null
+  MockMediaRecorder.instances = []
 })
 
 describe('useMediaRecorder', () => {
@@ -96,7 +123,7 @@ describe('useMediaRecorder', () => {
     act(() => {
       result.current.stopRecording()
     })
-    expect(result.current.state).toBe('RECORDED')
+    await waitFor(() => expect(result.current.state).toBe('RECORDED'))
 
     await act(async () => {
       await result.current.startRecording()
@@ -104,7 +131,43 @@ describe('useMediaRecorder', () => {
     expect(result.current.state).toBe('RECORDING')
   })
 
-  it('cuts off active recording and stops media tracks', async () => {
+  it('records an isolated lightweight audio blob alongside the composite video blob', async () => {
+    installMediaMocks()
+    const { result } = renderHook(() => useMediaRecorder())
+
+    await waitFor(() => expect(result.current.stream).not.toBeNull())
+    await act(async () => {
+      await result.current.startRecording()
+    })
+
+    // Two dedicated recorders: composite A/V + isolated audio-only.
+    expect(MockMediaRecorder.instances).toHaveLength(2)
+    const [, audioRecorder] = MockMediaRecorder.instances
+
+    // The audio recorder receives a stream containing only the audio track,
+    // compressed at 32 kbps with the best supported opus mime type.
+    const audioStream = audioRecorder.stream as unknown as { tracks: MockTrack[] }
+    expect(audioStream.tracks).toHaveLength(1)
+    expect(audioStream.tracks[0].kind).toBe('audio')
+    expect(audioRecorder.mimeType).toBe('audio/webm;codecs=opus')
+    expect(audioRecorder.audioBitsPerSecond).toBe(32000)
+    expect(audioRecorder.state).toBe('recording')
+
+    act(() => {
+      result.current.stopRecording()
+    })
+
+    await waitFor(() => expect(result.current.state).toBe('RECORDED'))
+    const media = result.current.recordedMedia
+    expect(media).not.toBeNull()
+    expect(media?.blob.type).toContain('video/webm')
+    expect(media?.audioBlob.type).toBe('audio/webm;codecs=opus')
+    expect(media?.audioMimeType).toBe('audio/webm;codecs=opus')
+    expect(media?.audioBlob.size).toBeGreaterThan(0)
+    expect(media?.url).toBe('blob:recording')
+  })
+
+  it('cuts off active recording and stops media tracks and both recorders', async () => {
     const { audioTrack, videoTrack } = installMediaMocks()
     const { result } = renderHook(() => useMediaRecorder())
 
@@ -117,10 +180,12 @@ describe('useMediaRecorder', () => {
       result.current.cutoffRecording()
     })
 
-    expect(MockMediaRecorder.lastInstance?.stop).toHaveBeenCalled()
+    for (const recorder of MockMediaRecorder.instances) {
+      expect(recorder.stop).toHaveBeenCalled()
+    }
     expect(audioTrack.stop).toHaveBeenCalled()
     expect(videoTrack.stop).toHaveBeenCalled()
-    expect(result.current.stream).toBeNull()
+    await waitFor(() => expect(result.current.stream).toBeNull())
   })
 
   it('handles permission denial gracefully', async () => {

@@ -152,6 +152,17 @@ function toUiEvaluation(
   }
 }
 
+/** Transcription-safe filename matching the recorded audio container. */
+function transcriptionFilename(mimeType: string): string {
+  if (mimeType.includes('mp4')) {
+    return 'audio.mp4'
+  }
+  if (mimeType.includes('wav')) {
+    return 'audio.wav'
+  }
+  return 'audio.webm'
+}
+
 function toStatusFromRecord(
   sessionId: string,
   record: api.SessionRecord,
@@ -274,17 +285,39 @@ export const fastApiSessionsApi: SessionsApi = {
     runtime.uploadAccepted = true
     runtime.evaluationStatus = 'processing'
 
-    // Transcribe the full recording, then kick off evaluation in the
-    // background so the processing page can surface the real analysis time.
+    // Transcribe the lightweight audio-only recording (not the composite video
+    // blob), then kick off evaluation in the background so the processing page
+    // can surface the real analysis time.
+    const uploadBlob = media.audioBlob.size > 0 ? media.audioBlob : media.blob
+
+    let rawTranscription: TranscriptionResult
+    try {
+      rawTranscription = await api.transcribeAudio(
+        uploadBlob,
+        transcriptionFilename(media.audioMimeType || media.mimeType),
+      )
+    } catch (error: unknown) {
+      // Reset so the user can re-record or retry instead of being locked into
+      // "Response already received".
+      runtime.uploadAccepted = false
+      runtime.evaluationStatus = 'failed'
+      if (error instanceof ApiClientError) {
+        throw error
+      }
+      throw new ApiClientError(
+        'Transcription request failed. Please check your connection and try again.',
+        502,
+        'UPLOAD_FAILED',
+      )
+    }
+
     const transcription: TranscriptionResult = {
-      ...(await api.transcribeAudio(
-        media.blob,
-        media.mimeType.includes('wav') ? 'audio.wav' : 'audio.webm',
-      )),
+      ...rawTranscription,
       eye_contact_percentage: options?.eyeContactPercentage ?? null,
     }
 
     if (!transcription.text.trim()) {
+      runtime.uploadAccepted = false
       runtime.evaluationStatus = 'failed'
       throw new ApiClientError(
         'No speech was detected in your recording. Please try again.',
