@@ -33,16 +33,16 @@ describe('FastAPI integration (live backend)', () => {
       const result = await fastApiSessionsApi.getResult(record.id)
 
       expect(result.sessionId).toBe(record.id)
-      expect(typeof result.overallScore).toBe('number')
-      expect('eyeContactPercentage' in result).toBe(true)
-      expect(result.metrics.length).toBeGreaterThan(0)
-      for (const metric of result.metrics) {
-        expect(typeof metric.label).toBe('string')
-        expect(typeof metric.score).toBe('number')
+      expect(typeof result.score).toBe('number')
+      expect(typeof result.disqualified).toBe('boolean')
+      expect(typeof result.feedback).toBe('string')
+      expect(Object.values(result.sub_scores)).toHaveLength(5)
+      for (const subScore of Object.values(result.sub_scores)) {
+        expect(typeof subScore).toBe('number')
+        expect(subScore).toBeGreaterThanOrEqual(0)
+        expect(subScore).toBeLessThanOrEqual(20)
       }
-      expect(Array.isArray(result.strengths)).toBe(true)
-      expect(Array.isArray(result.improvements)).toBe(true)
-      expect(typeof result.nextPractice).toBe('string')
+      expect('eyeContactPercentage' in result).toBe(true)
     },
   )
 

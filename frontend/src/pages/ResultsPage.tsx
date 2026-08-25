@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FeedbackList } from '../components/results/FeedbackList'
+import { DisqualifiedBanner } from '../components/results/DisqualifiedBanner'
 import { ScoreRing } from '../components/results/ScoreRing'
 import { Reveal } from '../components/motion/Reveal'
 import { RIBBON_WORDS } from '../components/ribbon/ribbonPresets'
@@ -10,7 +10,7 @@ import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { sessionsApi } from '../services/sessionsApi'
 import type { ApiError } from '../types/api'
-import type { EvaluationResult } from '../types/evaluation'
+import type { EvaluationResult, SubScores } from '../types/evaluation'
 
 interface ResultsPageProps {
   onNavigate: (path: string) => void
@@ -23,6 +23,33 @@ type ResultsLoadState =
   | { status: 'error' }
   | { status: 'no_speech' }
   | { status: 'ready'; result: EvaluationResult }
+
+const PRACTICE_TIPS: Record<keyof SubScores, string> = {
+  clarity: 'Slow down and replace filler words with deliberate pauses.',
+  relevance:
+    'Open by directly answering the question before adding any context.',
+  professionalism:
+    'Keep your examples workplace-appropriate and neutral in tone.',
+  structure:
+    'Practice a 90-second answer with a clear setup, action, and measurable result.',
+  impact: 'Close every answer with a concrete, quantified outcome.',
+}
+
+const SUB_LABELS: Record<keyof SubScores, string> = {
+  clarity: 'clarity',
+  relevance: 'relevance',
+  professionalism: 'professionalism',
+  structure: 'structure',
+  impact: 'impact',
+}
+
+function nextPracticeTip(subScores: SubScores): string {
+  const weakest = (Object.keys(PRACTICE_TIPS) as Array<keyof SubScores>).reduce(
+    (a, b) => (subScores[b] < subScores[a] ? b : a),
+    'clarity' as keyof SubScores,
+  )
+  return `${PRACTICE_TIPS[weakest]} Focus next on ${SUB_LABELS[weakest]}.`
+}
 
 function isApiError(error: unknown): error is ApiError {
   return (
@@ -45,10 +72,9 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
       try {
         const result = await sessionsApi.getResult(sessionId)
         if (active) {
-          const isNoSpeech =
-            result.overallScore === 0 &&
-            (result.metrics.some((m) => m.score === 0 && m.label !== 'Eye Contact') ||
-              result.strengths.length === 0)
+          // A zero-score disqualified evaluation means no usable speech was
+          // captured — show the dedicated no-speech state instead of results.
+          const isNoSpeech = result.disqualified && result.score === 0
           if (isNoSpeech) {
             setState({ status: 'no_speech' })
           } else {
@@ -148,6 +174,12 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
         </Reveal>
       </header>
 
+      {result.disqualified && (
+        <Reveal delay={60}>
+          <DisqualifiedBanner message={result.feedback || undefined} />
+        </Reveal>
+      )}
+
       <section
         className="debrief-hero"
         aria-labelledby="overall-performance"
@@ -157,9 +189,9 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
           <p id="overall-performance" className="debrief-label">
             Overall Score
           </p>
-          <ScoreRing score={result.overallScore} animate />
+          <ScoreRing score={result.score} animate />
           <p className="debrief-note">
-            An overall read of the five communication signals below.
+            An overall read of the communication signals below.
           </p>
         </Reveal>
         <div className="debrief-metrics">
@@ -167,7 +199,11 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
             <h2>How your speech read</h2>
           </Reveal>
           <Reveal delay={150}>
-            <RibbonChannels metrics={result.metrics} animate />
+            <RibbonChannels
+              subScores={result.sub_scores}
+              eyeContactPercentage={result.eyeContactPercentage}
+              animate
+            />
           </Reveal>
         </div>
       </section>
@@ -178,27 +214,11 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
         </Reveal>
         <div className="feedback-grid">
           <div className="feedback-col">
-            <Reveal delay={60}>
-              <p className="eyebrow">What worked</p>
-            </Reveal>
-            <Reveal delay={100} dataOdId="feedback-strengths">
-              <FeedbackList
-                items={result.strengths}
-                kind="strength"
-                title="What You Did Well"
-              />
-            </Reveal>
-          </div>
-          <div className="feedback-col">
-            <Reveal delay={140}>
-              <p className="eyebrow">What to improve</p>
-            </Reveal>
-            <Reveal delay={180} dataOdId="feedback-improvements">
-              <FeedbackList
-                items={result.improvements}
-                kind="improvement"
-                title="Areas to Improve"
-              />
+            <Reveal delay={100} dataOdId="feedback-notes">
+              <blockquote className="feedback-quote">
+                {result.feedback ||
+                  'The evaluator did not return written notes for this response.'}
+              </blockquote>
             </Reveal>
           </div>
         </div>
@@ -212,7 +232,7 @@ export function ResultsPage({ onNavigate, sessionId }: ResultsPageProps) {
         <Reveal className="next-practice-copy">
           <p className="eyebrow">Your Next Rep</p>
           <h2 id="next-practice-heading">Recommended Next Practice</h2>
-          <p>{result.nextPractice}</p>
+          <p>{nextPracticeTip(result.sub_scores)}</p>
         </Reveal>
         <Reveal delay={120}>
           <Button data-od-id="cta-practice-again" onClick={() => onNavigate('/setup')}>

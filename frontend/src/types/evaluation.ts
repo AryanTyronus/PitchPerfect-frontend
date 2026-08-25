@@ -1,20 +1,16 @@
-export interface EvaluationMetric {
-  label:
-    | 'Clarity'
-    | 'Confidence'
-    | 'Structure'
-    | 'Conciseness'
-    | 'Delivery'
-    | 'Eye Contact'
-  score: number
+export interface SubScores {
+  clarity: number
+  relevance: number
+  professionalism: number
+  structure: number
+  impact: number
 }
 
 export interface EvaluationResult {
   sessionId: string
-  overallScore: number
-  metrics: EvaluationMetric[]
+  score: number
+  disqualified: boolean
+  feedback: string
+  sub_scores: SubScores
   eyeContactPercentage?: number | null
-  strengths: string[]
-  improvements: string[]
-  nextPractice: string
 }

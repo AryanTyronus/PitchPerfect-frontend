@@ -9,7 +9,7 @@ PORT: int = int(os.getenv("PORT", "8000"))
 SUPABASE_URL: str | None = os.getenv("SUPABASE_URL")
 SUPABASE_KEY: str | None = os.getenv("SUPABASE_KEY")
 API_TOKEN: str | None = os.getenv("API_TOKEN")
-LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
+LLM_MODEL: str = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
 
 OPENROUTER_API_KEY: str | None = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")

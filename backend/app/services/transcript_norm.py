@@ -1,6 +1,6 @@
 import re
 
-from app.models.metrics import EvaluationResult, MetricScore
+from app.models.metrics import EvaluationResult, create_disqualified_evaluation
 
 MIN_TRANSCRIPT_WORDS = 3
 
@@ -47,17 +47,5 @@ def is_valid_transcript(text: str) -> bool:
 
 
 def create_zero_evaluation() -> EvaluationResult:
-    """Create a zero-score evaluation for invalid/empty transcripts."""
-    zero_metric = MetricScore(
-        score=0.0,
-        rationale="No coherent speech was detected in the recording.",
-    )
-    return EvaluationResult(
-        overall_score=0.0,
-        clarity=zero_metric,
-        confidence=zero_metric,
-        structure=zero_metric,
-        strengths=[],
-        improvements=["Record a clear answer of at least 3 seconds with audible speech."],
-        source="validation",
-    )
+    """Deterministic zero-score evaluation for invalid/empty transcripts (no LLM call)."""
+    return create_disqualified_evaluation(source="validation")

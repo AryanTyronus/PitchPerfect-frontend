@@ -432,34 +432,29 @@ export class MockInterviewBackend implements SessionsApi {
 
   private toResult(session: MockSessionRecord): EvaluationResult {
     const difficultyAdjustment: Record<Difficulty, number> = {
-      beginner: 4,
+      beginner: 1,
       intermediate: 0,
-      advanced: -3,
+      advanced: -1,
     }
-    const baseScore = 84 + difficultyAdjustment[session.config.difficulty]
+    const adjustment = difficultyAdjustment[session.config.difficulty]
+    const clampSub = (value: number): number =>
+      Math.min(Math.max(Math.round(value), 0), 20)
 
     return {
       sessionId: session.id,
-      overallScore: baseScore,
-      metrics: [
-        { label: 'Clarity', score: baseScore + 4 },
-        { label: 'Confidence', score: baseScore - 3 },
-        { label: 'Structure', score: baseScore + 2 },
-        { label: 'Conciseness', score: baseScore - 5 },
-        { label: 'Delivery', score: baseScore + 1 },
-      ],
-      strengths: [
-        'Clear opening with a direct answer to the question.',
-        'Steady pacing through the main example.',
-        'Specific outcome that made the response feel grounded.',
-      ],
-      improvements: [
-        'Tighten the middle section so the main point arrives sooner.',
-        'Use one sharper transition between context and action.',
-        'Pause deliberately instead of filling every silence.',
-      ],
-      nextPractice:
-        'Practice a 90-second answer with a clear setup, action, and measurable result.',
+      score: 84 + difficultyAdjustment[session.config.difficulty] * 5,
+      disqualified: false,
+      feedback:
+        'Clear opening with a direct answer to the question and steady pacing ' +
+        'through the main example. Tighten the middle section so the main point ' +
+        'arrives sooner, and pause deliberately instead of filling every silence.',
+      sub_scores: {
+        clarity: clampSub(17 + adjustment),
+        relevance: clampSub(18 + adjustment),
+        professionalism: clampSub(17 + adjustment),
+        structure: clampSub(16 + adjustment),
+        impact: clampSub(15 + adjustment),
+      },
     }
   }
 }

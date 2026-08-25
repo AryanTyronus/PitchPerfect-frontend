@@ -4,7 +4,13 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, HTTPException
 
 from app.models.feedback import FeedbackCreate, FeedbackRecord
-from app.models.metrics import EvaluationResult, MetricScore, PauseInfo, TranscriptionResult
+from app.models.metrics import (
+    EvaluationResult,
+    PauseInfo,
+    SubScores,
+    TranscriptionResult,
+    create_disqualified_evaluation,
+)
 from app.models.session import (
     QuestionAnswer,
     SessionCreate,
@@ -26,30 +32,25 @@ _feedback: dict[UUID, FeedbackRecord] = {}
 def _aggregate(answers: list[QuestionAnswer]) -> EvaluationResult:
     evals = [a.evaluation for a in answers if a.evaluation]
     if not evals:
-        return EvaluationResult(
-            overall_score=0,
-            clarity=MetricScore(score=0, rationale="No answers evaluated"),
-            confidence=MetricScore(score=0, rationale="No answers evaluated"),
-            structure=MetricScore(score=0, rationale="No answers evaluated"),
-            strengths=[],
-            improvements=[],
-            source="local",
+        return create_disqualified_evaluation(
+            feedback="No answers were evaluated.", source="local"
         )
     n = len(evals)
-    avg = lambda key: sum(getattr(e, key).score for e in evals) / n
-    overall = sum(e.overall_score for e in evals) / n
-    strengths: list[str] = []
-    improvements: list[str] = []
-    for e in evals:
-        strengths.extend(e.strengths or [])
-        improvements.extend(e.improvements or [])
+    avg = lambda key: round(sum(getattr(e.sub_scores, key) for e in evals) / n)
+    overall = sum(e.score for e in evals) / n
+    disqualified = all(e.disqualified for e in evals)
+    feedback_parts = [e.feedback for e in evals if e.feedback]
     return EvaluationResult(
-        overall_score=round(overall, 1),
-        clarity=MetricScore(score=round(avg("clarity"), 1), rationale="Averaged across questions"),
-        confidence=MetricScore(score=round(avg("confidence"), 1), rationale="Averaged across questions"),
-        structure=MetricScore(score=round(avg("structure"), 1), rationale="Averaged across questions"),
-        strengths=strengths[:10],
-        improvements=improvements[:10],
+        score=round(overall),
+        disqualified=disqualified,
+        feedback=" | ".join(feedback_parts)[:2000],
+        sub_scores=SubScores(
+            clarity=avg("clarity"),
+            relevance=avg("relevance"),
+            professionalism=avg("professionalism"),
+            structure=avg("structure"),
+            impact=avg("impact"),
+        ),
         source=evals[0].source,
     )
 
@@ -73,7 +74,7 @@ def _session_to_overview(session: SessionRecord) -> SessionOverview:
     return SessionOverview(
         id=str(session.id),
         title=session.title,
-        score=session.evaluation.overall_score if session.evaluation else None,
+        score=session.evaluation.score if session.evaluation else None,
         created_at=session.created_at,
         status="completed",
     )
@@ -83,7 +84,7 @@ def _row_to_overview(row: dict) -> SessionOverview:
     score = row.get("wpm_score")
     star = row.get("star_feedback")
     if isinstance(star, dict):
-        score = star.get("overall_score", score)
+        score = star.get("score", star.get("overall_score", score))
     created_raw = row.get("created_at")
     created = datetime.fromisoformat(created_raw) if created_raw else datetime.utcnow()
     return SessionOverview(
@@ -99,7 +100,10 @@ def _row_to_session(row: dict) -> SessionRecord:
     evaluation = None
     star = row.get("star_feedback")
     if isinstance(star, dict):
-        evaluation = EvaluationResult.model_validate(star)
+        try:
+            evaluation = EvaluationResult.model_validate(star)
+        except Exception:
+            evaluation = None
     created_raw = row.get("created_at")
     created = datetime.fromisoformat(created_raw) if created_raw else datetime.utcnow()
     questions: list[QuestionAnswer] = []
@@ -141,7 +145,7 @@ async def create_session(payload: SessionCreate) -> SessionRecord:
                 words=q.words,
             )
             metrics = calculate_speech_metrics(transcription)
-            evaluation = await evaluate_answer(transcription.text, metrics)
+            evaluation = await evaluate_answer(transcription.text, metrics, question=q.question)
             filler = extract_filler_words(normalized)
             detected_pauses = detect_pauses(transcription.words)
             question_answers.append(

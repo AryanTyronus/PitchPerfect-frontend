@@ -114,18 +114,19 @@ function clampScore(value: unknown, fallback = 0): number {
   return Math.round(Math.min(Math.max(numeric, 0), 100))
 }
 
+function clampSubScore(value: unknown, fallback = 0): number {
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numeric)) {
+    return fallback
+  }
+  return Math.round(Math.min(Math.max(numeric, 0), 20))
+}
+
 function toUiEvaluation(
   sessionId: string,
   evaluation: BackendEvaluationResult,
   transcriptionEyeContact?: number | null,
 ): EvaluationResult {
-  const strengths = Array.isArray(evaluation.strengths)
-    ? evaluation.strengths.map(String)
-    : []
-  const improvements = Array.isArray(evaluation.improvements)
-    ? evaluation.improvements.map(String)
-    : []
-
   // Prefer the evaluation's own value, falling back to the percentage that was
   // attached to the transcription we sent up (the backend echoes it back).
   const rawEyeContact =
@@ -135,25 +136,19 @@ function toUiEvaluation(
       ? clampScore(rawEyeContact)
       : null
 
-  const metrics: EvaluationResult['metrics'] = [
-    { label: 'Clarity', score: clampScore(evaluation.clarity?.score) },
-    { label: 'Confidence', score: clampScore(evaluation.confidence?.score) },
-    { label: 'Structure', score: clampScore(evaluation.structure?.score) },
-  ]
-  if (eyeContactPercentage !== null) {
-    metrics.push({ label: 'Eye Contact', score: eyeContactPercentage })
-  }
-
   return {
     sessionId,
-    overallScore: clampScore(evaluation.overall_score),
-    metrics,
+    score: clampScore(evaluation.score),
+    disqualified: Boolean(evaluation.disqualified),
+    feedback: typeof evaluation.feedback === 'string' ? evaluation.feedback : '',
+    sub_scores: {
+      clarity: clampSubScore(evaluation.sub_scores?.clarity),
+      relevance: clampSubScore(evaluation.sub_scores?.relevance),
+      professionalism: clampSubScore(evaluation.sub_scores?.professionalism),
+      structure: clampSubScore(evaluation.sub_scores?.structure),
+      impact: clampSubScore(evaluation.sub_scores?.impact),
+    },
     eyeContactPercentage,
-    strengths,
-    improvements,
-    nextPractice:
-      improvements[0] ??
-      'Practice another answer with a clear opening, structure, and close.',
   }
 }
 

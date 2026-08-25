@@ -293,6 +293,11 @@
   text-align: right;
 }
 
+.channel-score .channel-max {
+  color: var(--muted-strong);
+  font-size: 0.82rem;
+}
+
 /* Eye-contact channel uses score thresholds instead of the accent ramp:
    >70% strong, 40-70% moderate, <40% needs work. */
 .channel-row--good .channel-track span {

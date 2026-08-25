@@ -35,19 +35,20 @@ export interface SpeechMetrics {
   energy_peak: number
 }
 
-export interface MetricScore {
-  score: number
-  rationale: string
+export interface SubScores {
+  clarity: number
+  relevance: number
+  professionalism: number
+  structure: number
+  impact: number
 }
 
 export interface EvaluationResult {
-  overall_score: number
-  clarity: MetricScore
-  confidence: MetricScore
-  structure: MetricScore
+  score: number
+  disqualified: boolean
+  feedback: string
+  sub_scores: SubScores
   eye_contact_percentage?: number | null
-  strengths: string[]
-  improvements: string[]
   source: string
 }
 

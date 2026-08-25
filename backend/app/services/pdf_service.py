@@ -12,6 +12,6 @@ def render_session_pdf(session: SessionRecord) -> bytes:
     output = BytesIO()
     canvas = Canvas(output, pagesize=letter)
     canvas.drawString(48, 750, session.title)
-    canvas.drawString(48, 725, f"Overall score: {session.evaluation.overall_score if session.evaluation else 'N/A'}")
+    canvas.drawString(48, 725, f"Overall score: {session.evaluation.score if session.evaluation else 'N/A'}")
     canvas.save()
     return output.getvalue()

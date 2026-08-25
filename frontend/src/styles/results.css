@@ -54,6 +54,39 @@
   padding: clamp(24px, 4vw, 40px);
 }
 
+.disqualified-banner {
+  align-items: center;
+  background: var(--danger-soft);
+  border: 1px solid color-mix(in oklch, var(--danger) 32%, var(--border));
+  border-radius: var(--radius-m);
+  color: var(--danger-strong);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 22px;
+  padding: 13px 18px;
+}
+
+.disqualified-banner p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.disqualified-badge {
+  align-items: center;
+  background: color-mix(in oklch, var(--danger) 14%, transparent);
+  border: 1px solid color-mix(in oklch, var(--danger) 42%, transparent);
+  border-radius: 999px;
+  color: var(--danger-strong);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  padding: 3px 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .debrief-score {
   align-items: center;
   display: flex;
@@ -168,6 +201,15 @@
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.feedback-quote {
+  border-left: 3px solid var(--accent);
+  color: var(--fg);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin: 0;
+  padding: 4px 0 4px 18px;
 }
 
 .feedback-col {

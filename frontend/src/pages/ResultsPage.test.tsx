@@ -6,7 +6,7 @@ import resultsSource from './ResultsPage.tsx?raw'
 import { ResultsPage } from './ResultsPage'
 import { sessionsApi } from '../services/sessionsApi'
 import type { SessionsApi } from '../types/api'
-import type { EvaluationResult } from '../types/evaluation'
+import type { EvaluationResult, SubScores } from '../types/evaluation'
 
 vi.mock('../services/sessionsApi', () => {
   const api = {
@@ -23,23 +23,21 @@ vi.mock('../services/sessionsApi', () => {
 const mockedApi = sessionsApi as unknown as SessionsApi
 const getResult = vi.mocked(mockedApi.getResult)
 
+const subScores: SubScores = {
+  clarity: 17,
+  relevance: 18,
+  professionalism: 16,
+  structure: 15,
+  impact: 14,
+}
+
 const evaluationResult: EvaluationResult = {
   sessionId: 'session-1',
-  overallScore: 84,
-  metrics: [
-    { label: 'Clarity', score: 88 },
-    { label: 'Confidence', score: 81 },
-    { label: 'Structure', score: 86 },
-    { label: 'Conciseness', score: 79 },
-    { label: 'Delivery', score: 85 },
-  ],
-  strengths: [
-    'Clear opening with a direct answer to the question.',
-    'Good answer structure.',
-  ],
-  improvements: ['Tighten the middle section so the main point arrives sooner.'],
-  nextPractice:
-    'Practice a 90-second answer with a clear setup, action, and measurable result.',
+  score: 84,
+  disqualified: false,
+  feedback:
+    'Clear opening with a direct answer and a specific, measurable outcome.',
+  sub_scores: subScores,
 }
 
 function renderPage(navigate = vi.fn()) {
@@ -86,39 +84,34 @@ describe('ResultsPage', () => {
     expect(screen.getByText('Overall Score')).toBeInTheDocument()
   })
 
-  it('renders all five communication metrics with scores and progress indicators', async () => {
+  it('renders all five sub-score channels with scores and progress indicators', async () => {
     renderPage()
 
     await waitFor(() => expect(screen.getByText('Clarity')).toBeInTheDocument())
 
     const expected: Array<[string, string]> = [
-      ['Clarity', '88'],
-      ['Confidence', '81'],
-      ['Structure', '86'],
-      ['Conciseness', '79'],
-      ['Delivery', '85'],
+      ['Clarity', '17'],
+      ['Relevance', '18'],
+      ['Professionalism', '16'],
+      ['Structure', '15'],
+      ['Impact', '14'],
     ]
 
     for (const [label, score] of expected) {
       expect(screen.getByText(label)).toBeInTheDocument()
-      expect(screen.getByText(score)).toBeInTheDocument()
+      expect(screen.getByText(score, { exact: false })).toBeInTheDocument()
     }
 
     const bars = screen.getAllByRole('progressbar')
     expect(bars).toHaveLength(5)
-    expect(bars[0]).toHaveAttribute('aria-valuenow', '88')
-    expect(bars[4]).toHaveAttribute('aria-valuenow', '85')
+    expect(bars[0]).toHaveAttribute('aria-valuenow', '17')
+    expect(bars[0]).toHaveAttribute('aria-valuemax', '20')
+    expect(bars[4]).toHaveAttribute('aria-valuenow', '14')
   })
 
-  it('renders the Eye Contact metric with a score threshold tone', async () => {
+  it('renders the Eye Contact channel with a score threshold tone', async () => {
     getResult.mockResolvedValue({
       ...evaluationResult,
-      metrics: [
-        { label: 'Clarity', score: 88 },
-        { label: 'Confidence', score: 81 },
-        { label: 'Structure', score: 86 },
-        { label: 'Eye Contact', score: 82 },
-      ],
       eyeContactPercentage: 82,
     })
 
@@ -135,12 +128,6 @@ describe('ResultsPage', () => {
   it('marks moderate eye contact with the warning tone', async () => {
     getResult.mockResolvedValue({
       ...evaluationResult,
-      metrics: [
-        { label: 'Clarity', score: 88 },
-        { label: 'Confidence', score: 81 },
-        { label: 'Structure', score: 86 },
-        { label: 'Eye Contact', score: 55 },
-      ],
       eyeContactPercentage: 55,
     })
 
@@ -148,8 +135,6 @@ describe('ResultsPage', () => {
 
     await waitFor(() => expect(screen.getByText('Eye Contact')).toBeInTheDocument())
 
-    const bar = screen.getByRole('progressbar', { name: 'Eye Contact progress' })
-    expect(bar).toHaveAttribute('aria-valuenow', '55')
     const row = screen.getByText('Eye Contact').closest('li')
     expect(row).toHaveClass('channel-row--moderate')
   })
@@ -157,12 +142,6 @@ describe('ResultsPage', () => {
   it('marks low eye contact with the needs-work tone', async () => {
     getResult.mockResolvedValue({
       ...evaluationResult,
-      metrics: [
-        { label: 'Clarity', score: 88 },
-        { label: 'Confidence', score: 81 },
-        { label: 'Structure', score: 86 },
-        { label: 'Eye Contact', score: 35 },
-      ],
       eyeContactPercentage: 35,
     })
 
@@ -170,33 +149,55 @@ describe('ResultsPage', () => {
 
     await waitFor(() => expect(screen.getByText('Eye Contact')).toBeInTheDocument())
 
-    const bar = screen.getByRole('progressbar', { name: 'Eye Contact progress' })
-    expect(bar).toHaveAttribute('aria-valuenow', '35')
     const row = screen.getByText('Eye Contact').closest('li')
     expect(row).toHaveClass('channel-row--needs-work')
   })
 
-  it('renders the strengths returned by the API', async () => {
+  it('renders the feedback returned by the API', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      feedback: 'Custom coaching note from the API.',
+    })
+
     renderPage()
 
     await waitFor(() =>
-      expect(screen.getByText('What You Did Well')).toBeInTheDocument(),
+      expect(screen.getByText('Custom coaching note from the API.')).toBeInTheDocument(),
     )
-    expect(
-      screen.getByText('Clear opening with a direct answer to the question.'),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Good answer structure.')).toBeInTheDocument()
   })
 
-  it('renders the improvements returned by the API', async () => {
+  it('shows a disqualified banner when disqualified is true', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      score: 8,
+      disqualified: true,
+      feedback: 'Severe professional misconduct detected.',
+      sub_scores: { clarity: 2, relevance: 0, professionalism: 0, structure: 1, impact: 0 },
+    })
+
     renderPage()
 
-    await waitFor(() =>
-      expect(screen.getByText('Areas to Improve')).toBeInTheDocument(),
-    )
     expect(
-      screen.getByText('Tighten the middle section so the main point arrives sooner.'),
+      await screen.findByRole('alert'),
     ).toBeInTheDocument()
+    expect(screen.getByText('Disqualified')).toBeInTheDocument()
+    expect(
+      screen.getAllByText('Severe professional misconduct detected.').length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('shows the no-speech state when disqualified with a zero score', async () => {
+    getResult.mockResolvedValue({
+      ...evaluationResult,
+      score: 0,
+      disqualified: true,
+      feedback: 'no audible speech or response detected in recording.',
+      sub_scores: { clarity: 0, relevance: 0, professionalism: 0, structure: 0, impact: 0 },
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('No Speech Detected')).toBeInTheDocument()
   })
 
   it('renders the recommended next practice and a Practice Again CTA', async () => {
@@ -205,11 +206,6 @@ describe('ResultsPage', () => {
     await waitFor(() =>
       expect(screen.getByText('Recommended Next Practice')).toBeInTheDocument(),
     )
-    expect(
-      screen.getByText(
-        'Practice a 90-second answer with a clear setup, action, and measurable result.',
-      ),
-    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Practice Again' })).toBeInTheDocument()
   })
 
@@ -269,26 +265,6 @@ describe('ResultsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Practice Again' }))
 
     expect(navigate).toHaveBeenCalledWith('/setup')
-  })
-
-  it('renders the feedback returned by the API instead of hardcoded data', async () => {
-    getResult.mockResolvedValue({
-      ...evaluationResult,
-      strengths: ['Custom strength from the API.'],
-      improvements: ['Custom improvement from the API.'],
-      nextPractice: 'Custom next practice from the API.',
-    })
-
-    renderPage()
-
-    await waitFor(() =>
-      expect(screen.getByText('Custom strength from the API.')).toBeInTheDocument(),
-    )
-    expect(screen.getByText('Custom improvement from the API.')).toBeInTheDocument()
-    expect(screen.getByText('Custom next practice from the API.')).toBeInTheDocument()
-    expect(
-      screen.queryByText('Clear opening with a direct answer to the question.'),
-    ).not.toBeInTheDocument()
   })
 
   it('does not import the mock backend directly or hardcode evaluation data', () => {

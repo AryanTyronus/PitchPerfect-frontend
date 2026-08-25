@@ -53,21 +53,50 @@ class SpeechMetrics(BaseModel):
     energy_peak: float = Field(ge=0)
 
 
-class MetricScore(BaseModel):
+class SubScores(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    score: float = Field(ge=0, le=100)
-    rationale: str = Field(min_length=1, max_length=2000)
+    clarity: int = Field(default=0, ge=0, le=20)
+    relevance: int = Field(default=0, ge=0, le=20)
+    professionalism: int = Field(default=0, ge=0, le=20)
+    structure: int = Field(default=0, ge=0, le=20)
+    impact: int = Field(default=0, ge=0, le=20)
+
+    def average(self) -> float:
+        return (self.clarity + self.relevance + self.professionalism + self.structure + self.impact) / 5.0
 
 
 class EvaluationResult(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    overall_score: float = Field(ge=0, le=100)
-    clarity: MetricScore
-    confidence: MetricScore
-    structure: MetricScore
+    score: int = Field(ge=0, le=100)
+    disqualified: bool = False
+    feedback: str = Field(default="", max_length=2000)
+    sub_scores: SubScores
     eye_contact_percentage: float | None = Field(default=None, ge=0, le=100)
-    strengths: List[str] = Field(default_factory=list, max_length=10)
-    improvements: List[str] = Field(default_factory=list, max_length=10)
     source: str = "local"
+
+    @model_validator(mode="after")
+    def validate_calibration(self) -> "EvaluationResult":
+        # Disqualified answers must never carry a meaningful score.
+        if self.disqualified and self.score > 10:
+            self.score = min(self.score, 10)
+            for name in type(self.sub_scores).model_fields:
+                if getattr(self.sub_scores, name) > 2:
+                    setattr(self.sub_scores, name, 2)
+        return self
+
+
+def create_disqualified_evaluation(
+    feedback: str = "no audible speech or response detected in recording.",
+    score: int = 0,
+    source: str = "validation",
+) -> EvaluationResult:
+    """Deterministic safe evaluation used for invalid transcripts and LLM failures."""
+    return EvaluationResult(
+        score=score,
+        disqualified=True,
+        feedback=feedback,
+        sub_scores=SubScores(),
+        source=source,
+    )

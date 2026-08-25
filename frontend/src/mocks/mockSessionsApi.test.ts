@@ -236,8 +236,9 @@ describe('MockInterviewBackend', () => {
     const result = await backend.getResult(session.id)
 
     expect(result.sessionId).toBe(session.id)
-    expect(result.overallScore).toBeGreaterThan(0)
-    expect(result.metrics).toHaveLength(5)
+    expect(result.score).toBeGreaterThan(0)
+    expect(result.disqualified).toBe(false)
+    expect(Object.values(result.sub_scores)).toHaveLength(5)
   })
 
   it('can simulate evaluation failure', async () => {

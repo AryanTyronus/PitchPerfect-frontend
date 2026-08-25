@@ -1,35 +1,30 @@
-from app.models.metrics import EvaluationResult, MetricScore, SpeechMetrics
-
-MIN_TRANSCRIPT_WORDS = 3
+from app.models.metrics import EvaluationResult, SpeechMetrics, SubScores, create_disqualified_evaluation
+from app.services.transcript_norm import MIN_TRANSCRIPT_WORDS
 
 
 def evaluate_locally(text: str, metrics: SpeechMetrics) -> EvaluationResult:
     words = text.strip().split()
     if len(words) < MIN_TRANSCRIPT_WORDS:
-        zero_metric = MetricScore(
-            score=0.0,
-            rationale="No coherent speech was detected in the recording.",
-        )
-        return EvaluationResult(
-            overall_score=0.0,
-            clarity=zero_metric,
-            confidence=zero_metric,
-            structure=zero_metric,
-            strengths=[],
-            improvements=["Record a clear answer of at least 3 seconds with audible speech."],
-            source="local",
-        )
+        return create_disqualified_evaluation(source="local")
 
     pace = max(0.0, 100.0 - abs(metrics.words_per_minute - 140.0) * 0.6)
-    clarity = max(0.0, 100.0 - metrics.filler_ratio * 300.0)
-    confidence = min(100.0, 55.0 + metrics.energy_rms * 45.0)
-    structure = min(100.0, 45.0 + min(35.0, len(text.split(".")) * 8.0) + min(20.0, pace * 0.2))
-    overall = round((clarity + confidence + structure) / 3, 1)
+    clarity = int(max(0.0, min(20.0, 20.0 - metrics.filler_ratio * 60.0)))
+    relevance = int(max(0.0, min(20.0, len(words) / 8.0)))
+    professionalism = int(max(0.0, min(20.0, 12.0 + metrics.energy_rms * 8.0)))
+    structure = int(max(0.0, min(20.0, 6.0 + min(8.0, len(text.split(".")) * 2.0) + min(6.0, pace * 0.06))))
+    impact = int(max(0.0, min(20.0, (clarity + structure) / 2)))
+    sub_scores = SubScores(
+        clarity=clarity,
+        relevance=relevance,
+        professionalism=professionalism,
+        structure=structure,
+        impact=impact,
+    )
     return EvaluationResult(
-        overall_score=overall,
-        clarity=MetricScore(score=round(clarity, 1), rationale="Fewer filler words generally improve perceived clarity."),
-        confidence=MetricScore(score=round(confidence, 1), rationale="Energy and steady delivery are used as local confidence signals."),
-        structure=MetricScore(score=round(structure, 1), rationale="Sentence coverage and speaking pace provide a structure baseline."),
-        strengths=["Speech was captured successfully."],
-        improvements=["Replace filler words with deliberate pauses.", "Aim for a steady pace near 120-160 words per minute."],
+        score=int(round(sub_scores.average() * 5)),
+        disqualified=False,
+        feedback="Local heuristic evaluation: LLM providers were unavailable. "
+        "Scores are derived from speech metrics only and should be treated as a baseline.",
+        sub_scores=sub_scores,
+        source="local",
     )
