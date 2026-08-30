@@ -7,9 +7,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependency installs
+node_modules/
+frontend/node_modules/
+backend/.venv/
+.venv/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+coverage/
+htmlcov/
 *.local
 
 # Editor directories and files
@@ -25,11 +34,19 @@ dist-ssr
 
 # Build/tooling caches
 .vite/
+.cache/
+.turbo/
+.parcel-cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
 
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+*.pyo
 
 # Environment & Secrets
 .env
@@ -79,4 +96,3 @@ Thumbs.db
 # Build artifacts with sensitive content
 .next/
 .nuxt/
-.cache/
